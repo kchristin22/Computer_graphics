@@ -1,12 +1,15 @@
 #include <stdio.h>
 #include <cstdlib>
 #include <math.h>
+#include <unistd.h>
 #include <iostream>
 #include <GL/glut.h>
 
 uint8_t n = 6;     /* number of vertices */
 float r = 1 / 3.0; /* ratio of distance from point to vertex */
 size_t num_iter = 12000; /* number of points */
+bool is_single_colour = true;
+bool dynamic = false;
 
 void myinit()
 {
@@ -24,6 +27,9 @@ void myinit()
     gluOrtho2D(0.0, 500.0, 0.0, 500.0);
     glMatrixMode(GL_MODELVIEW);
 }
+void delay (int value);
+
+void display_init(){}
 
 void display()
 {
@@ -53,6 +59,9 @@ void display()
     point2D p = {250.0, 250.0}; /* Initial point inside the polygon (center of window) */
 
     glClear(GL_COLOR_BUFFER_BIT); /*clear the window */
+    glColor3f(1.0, 0.0, 0.0);     /* draw in red */
+
+    glDrawBuffer(GL_BACK);
 
     /* computes and plots 5000 new points */
 
@@ -67,13 +76,31 @@ void display()
 
         /* plot new point */
 
+        if (!is_single_colour)
+        {
+            glColor3f((float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX);
+        }
+
         glBegin(GL_POINTS);
             glVertex2fv(p);
         glEnd();
     }
     glutSwapBuffers();
     glFlush(); /* clear buffers */
+
+    if (dynamic)
+    {
+
+        glutTimerFunc(1000, delay, 0); // wait 1 sec to draw next frame
+    }
 }
+
+void delay(int value)
+{
+    glutDisplayFunc(display);
+
+    glutPostRedisplay();
+};
 
 enum MENU_TYPE : int
 {
@@ -85,10 +112,13 @@ enum MENU_TYPE : int
 
 void menu(int choice)
 {
+    glutDisplayFunc(display);
     if (choice == COLOUR)
     {
         glColor3f(0.5, 0.5, 0.5);
-        glDrawBuffer(GL_BACK);
+        is_single_colour = false;
+        num_iter = 15000;
+        dynamic = true;
         display();
     }
     else if (choice == HEX)
@@ -96,7 +126,8 @@ void menu(int choice)
         n = 6;
         r = 1 / 3.0;
         num_iter = 12000;
-        glDrawBuffer(GL_BACK);
+        is_single_colour = true;
+        dynamic = false;
         display();
     }
     else if (choice == PENT)
@@ -104,17 +135,21 @@ void menu(int choice)
         n = 5;
         r = 3 / 8.0;
         num_iter = 12000;
-        glDrawBuffer(GL_BACK);
+        is_single_colour = true;
+        dynamic = false;
         display();
     }
     else if (choice == EXIT)
     {
         exit(0);
     }
+    glutDisplayFunc(display_init);
 };
 
 int main(int argc, char **argv)
 {
+
+    srand(time(NULL));
 
     /* Standard GLUT initialization */
 
@@ -123,7 +158,7 @@ int main(int argc, char **argv)
     glutInitWindowSize(500, 500);                /* 500 x 500 pixel window */
     glutInitWindowPosition(0, 0);                /* place window top left on display */
     glutCreateWindow("Fractal");                 /* window title */
-    glutDisplayFunc(display);                    /* display callback invoked when window opened */
+    glutDisplayFunc(display_init);                    /* display callback invoked when window opened */
 
     glutCreateMenu(menu);
 
@@ -134,9 +169,14 @@ int main(int argc, char **argv)
     glutAddMenuEntry("Program Terminate", EXIT);
 
     // Associate a mouse button with menu
-    glutAttachMenu(GLUT_RIGHT_BUTTON);
+    glutAttachMenu(GLUT_RIGHT_BUTTON); // ensure that no postredisplay is needed here, change mouse callback/Idle
+
+    glutIdleFunc(nullptr);
 
     myinit(); /* set attributes */
 
+    display();
+
     glutMainLoop(); /* enter event loop */
+
 }
