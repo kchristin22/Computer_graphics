@@ -5,8 +5,8 @@
 #include <iostream>
 #include <GL/glut.h>
 
-uint8_t n = 6;     /* number of vertices */
-float r = 1 / 3.0; /* ratio of distance from point to vertex */
+uint8_t n = 6;           /* number of vertices */
+float r = 1 / 3.0;       /* ratio of distance from point to vertex */
 size_t num_iter = 12000; /* number of points */
 bool is_single_colour = true;
 bool dynamic = false;
@@ -27,9 +27,9 @@ void myinit()
     gluOrtho2D(0.0, 500.0, 0.0, 500.0);
     glMatrixMode(GL_MODELVIEW);
 }
-void delay (int value);
+void delay(int value);
 
-void display_init(){}
+void display_init() {}
 
 void display()
 {
@@ -82,24 +82,25 @@ void display()
         }
 
         glBegin(GL_POINTS);
-            glVertex2fv(p);
+        glVertex2fv(p);
         glEnd();
     }
     glutSwapBuffers();
     glFlush(); /* clear buffers */
 
-    if (dynamic)
-    {
-
-        glutTimerFunc(1000, delay, 0); // wait 1 sec to draw next frame
-    }
+    glutDisplayFunc(display_init);       // initiate display callback to do nothing
+                                         // (better here than in timer callback to only set it once)
+    glutTimerFunc(1000, delay, dynamic); // wait 1 sec to draw next frame if dynamic is true
+                                         // else will do nothing
 }
 
 void delay(int value)
 {
-    glutDisplayFunc(display);
-
-    glutPostRedisplay();
+    if (value)
+    {
+        glutDisplayFunc(display); // change display callback to draw next frame
+        glutPostRedisplay();      // request redisplay
+    }
 };
 
 enum MENU_TYPE : int
@@ -112,7 +113,8 @@ enum MENU_TYPE : int
 
 void menu(int choice)
 {
-    glutDisplayFunc(display);
+    glutDisplayFunc(display_init); // when the pop up menu shows up and a redisplay is requested,
+                                   // we don't want to call display() again
     if (choice == COLOUR)
     {
         glColor3f(0.5, 0.5, 0.5);
@@ -143,7 +145,6 @@ void menu(int choice)
     {
         exit(0);
     }
-    glutDisplayFunc(display_init);
 };
 
 int main(int argc, char **argv)
@@ -158,7 +159,7 @@ int main(int argc, char **argv)
     glutInitWindowSize(500, 500);                /* 500 x 500 pixel window */
     glutInitWindowPosition(0, 0);                /* place window top left on display */
     glutCreateWindow("Fractal");                 /* window title */
-    glutDisplayFunc(display_init);                    /* display callback invoked when window opened */
+    glutDisplayFunc(display_init);               /* display callback invoked when window opened */
 
     glutCreateMenu(menu);
 
@@ -169,14 +170,11 @@ int main(int argc, char **argv)
     glutAddMenuEntry("Program Terminate", EXIT);
 
     // Associate a mouse button with menu
-    glutAttachMenu(GLUT_RIGHT_BUTTON); // ensure that no postredisplay is needed here, change mouse callback/Idle
-
-    glutIdleFunc(nullptr);
+    glutAttachMenu(GLUT_RIGHT_BUTTON);
 
     myinit(); /* set attributes */
 
     display();
 
     glutMainLoop(); /* enter event loop */
-
 }
