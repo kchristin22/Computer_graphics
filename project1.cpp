@@ -10,6 +10,7 @@ float r = 1 / 3.0;       /* ratio of distance from point to vertex */
 size_t num_iter = 12000; /* number of points */
 bool is_single_colour = true;
 bool dynamic = false;
+int this_button;         /* the mouse button that was pressed */
 
 void myinit()
 {
@@ -145,7 +146,18 @@ void menu(int choice)
     {
         exit(0);
     }
-};
+}
+
+void changePos(int x, int y)
+{
+    if (this_button == GLUT_LEFT_BUTTON) // change view only when left button is pressed
+        printf("x: %d, y: %d\n", x, y);
+}
+
+void mousePressed(int button, int state, int x, int y)
+{
+    this_button = button;
+}
 
 int main(int argc, char **argv)
 {
@@ -171,6 +183,9 @@ int main(int argc, char **argv)
 
     // Associate a mouse button with menu
     glutAttachMenu(GLUT_RIGHT_BUTTON);
+
+    glutMotionFunc(changePos);
+    glutMouseFunc(mousePressed); // used to detect if the left button is pressed
 
     myinit(); /* set attributes */
 
