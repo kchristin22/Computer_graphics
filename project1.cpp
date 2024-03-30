@@ -5,12 +5,16 @@
 #include <iostream>
 #include <GL/glut.h>
 
-uint8_t n = 6;           /* number of vertices */
-float r = 1 / 3.0;       /* ratio of distance from point to vertex */
-size_t num_iter = 12000; /* number of points */
-bool is_single_colour = true;
-bool dynamic = false;
-int this_button;         /* the mouse button that was pressed */
+uint8_t n = 6;                        /* number of vertices */
+float r = 1 / 3.0;                    /* ratio of distance from point to vertex */
+size_t num_iter = 12000;              /* number of points */
+bool is_single_colour = true;         /* only paint in red */
+bool dynamic = false;                 /* the drawing changes every 1 sec */
+int this_button;                      /* the mouse button that was pressed */
+int x_pressed, y_pressed;             /* coordinates of where the left mouse button was pressed */
+int height;                           /* height of ortho view */
+int width;                            /* width of ortho view */
+int x_cur_start = 0, y_cur_start = 0; /* coordinates of where the left mouse button was released */
 
 void myinit()
 {
@@ -25,7 +29,7 @@ void myinit()
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity(); // reset the matrix
-    gluOrtho2D(0.0, 500.0, 0.0, 500.0);
+    gluOrtho2D(0.0, 1000.0, 0, 1000.0);
     glMatrixMode(GL_MODELVIEW);
 }
 void delay(int value);
@@ -47,9 +51,9 @@ void display()
     // First point on the left side of the window must be at distance 500 / 2 from the center
     double radius_x = 250 / abs(sin(2 * M_PI * 1 / n));
     // Vertical distance of center to the bottom line of the polygon
-    double offset_y = 500 - radius_y;
+    double offset_y = 2 * height - 750 + 500 - radius_y;
     // Horizontal distance of center to the left line of the polygon
-    double offset_x = 250.0;
+    double offset_x = 500.0;
 
     for (size_t i = 0; i < n; i++)
     {
@@ -57,7 +61,7 @@ void display()
         pol_vertices[i][0] = offset_x + radius_x * sin(2 * M_PI * i / n);
     }
 
-    point2D p = {250.0, 250.0}; /* Initial point inside the polygon (center of window) */
+    point2D p = {500.0, 500.0}; /* Initial point inside the polygon (center of ortho coordinates) */
 
     glClear(GL_COLOR_BUFFER_BIT); /*clear the window */
     glColor3f(1.0, 0.0, 0.0);     /* draw in red */
@@ -150,13 +154,41 @@ void menu(int choice)
 
 void changePos(int x, int y)
 {
-    if (this_button == GLUT_LEFT_BUTTON) // change view only when left button is pressed
-        printf("x: %d, y: %d\n", x, y);
+    if (this_button == GLUT_LEFT_BUTTON)
+    { // change view only when left button is pressed
+        // move the view with regards to the current one
+        glViewport(x_cur_start + x - x_pressed, y_cur_start + (height - y) - y_pressed, width, height);
+        glMatrixMode(GL_MODELVIEW);
+        display();
+    }
 }
 
 void mousePressed(int button, int state, int x, int y)
 {
     this_button = button;
+    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
+    { // save the old coordinates
+        x_pressed = x;
+        y_pressed = height - y;
+    }
+    else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP)
+    { // store the current starting point of the view
+        x_cur_start += x - x_pressed;
+        y_cur_start += (height - y) - y_pressed;
+    }
+}
+
+void resize(int w, int h)
+{
+    height = h;
+    width = w;
+    glViewport(0, 0, w, h);
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity(); // reset the matrix
+    gluOrtho2D(0, 2 * w, 0, 2 * h);
+    glMatrixMode(GL_MODELVIEW);
+    display();
 }
 
 int main(int argc, char **argv)
@@ -186,6 +218,10 @@ int main(int argc, char **argv)
 
     glutMotionFunc(changePos);
     glutMouseFunc(mousePressed); // used to detect if the left button is pressed
+
+    glutReshapeFunc(resize);
+
+    glutIdleFunc(nullptr);
 
     myinit(); /* set attributes */
 
