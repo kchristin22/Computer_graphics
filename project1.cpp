@@ -167,7 +167,7 @@ void mousePressed(int button, int state, int x, int y)
 {
     this_button = button;
     if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
-    { // save the old coordinates
+    { // save the coordinates of where the left button was pressed
         x_pressed = x;
         y_pressed = height - y;
     }
@@ -193,6 +193,18 @@ void resize(int w, int h)
 
 int main(int argc, char **argv)
 {
+
+    if (argc > 1)
+    {
+        if (argc != 4)
+        {
+            std::cerr << "Usage: " << argv[0] << " ${n} ${r} ${num_iter}" << std::endl;
+            exit(1);
+        }
+        n = atoi(argv[1]);
+        r = std::atof(argv[2]);
+        num_iter = atoi(argv[3]);
+    }
 
     srand(time(NULL));
 
