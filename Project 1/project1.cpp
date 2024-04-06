@@ -11,9 +11,10 @@ size_t num_iter = 12000;              /* number of points */
 bool is_single_colour = true;         /* only paint in red */
 bool dynamic = false;                 /* the drawing changes every 1 sec */
 int this_button;                      /* the mouse button that was pressed */
+bool pressed = false;                 /* the left mouse button was pressed */
 int x_pressed, y_pressed;             /* coordinates of where the left mouse button was pressed */
-int height;                           /* height of ortho view */
-int width;                            /* width of ortho view */
+int height;                           /* height of window */
+int width;                            /* width of window */
 int x_cur_start = 0, y_cur_start = 0; /* coordinates of where the left mouse button was released */
 
 void myinit()
@@ -46,9 +47,9 @@ void display()
 
     // if n is odd, max vertical distance of first point to the bottom of the polygon
     // is its vertical distance to the bottom line of the polygon.
-    // Else, max vertical distnace is 2*radius_y(= 500)
+    // Else, max vertical distnace (diameter) is 2*radius_y(= 500)
     double radius_y = n % 2 ? 500.0 / (1 + cos(M_PI / n)) : 250.0;
-    // First point on the left side of the window must be at distance 500 / 2 from the center
+    // First point of the polygon on the left side of the window must be at distance 500 / 2 from the center (hypotenuse)
     double radius_x = 250 / abs(sin(2 * M_PI * 1 / n));
     // Vertical distance of center to the bottom line of the polygon
     double offset_y = 2 * height - 750 + 500 - radius_y;
@@ -94,7 +95,9 @@ void display()
     glFlush(); /* clear buffers */
 
     glutDisplayFunc(display_init);       // initiate display callback to do nothing
-                                         // (better here than in timer callback to only set it once)
+                                         // when the pop up menu shows up and a redisplay is requested,
+                                         // we don't want to call display() again
+                                         // (better here than in timer callback to only set it once when it's not dynamic)
     glutTimerFunc(1000, delay, dynamic); // wait 1 sec to draw next frame if dynamic is true
                                          // else will do nothing
 }
@@ -118,8 +121,6 @@ enum MENU_TYPE : int
 
 void menu(int choice)
 {
-    glutDisplayFunc(display_init); // when the pop up menu shows up and a redisplay is requested,
-                                   // we don't want to call display() again
     if (choice == COLOUR)
     {
         glColor3f(0.5, 0.5, 0.5);
@@ -170,11 +171,19 @@ void mousePressed(int button, int state, int x, int y)
     { // save the coordinates of where the left button was pressed
         x_pressed = x;
         y_pressed = height - y;
+        dynamic = false; // stop the dynamic drawing
+        pressed = true;
     }
-    else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP)
+    else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP && pressed)
     { // store the current starting point of the view
         x_cur_start += x - x_pressed;
         y_cur_start += (height - y) - y_pressed;
+        if (!is_single_colour)
+        {
+            dynamic = true; // start the dynamic drawing
+            display();
+        }
+        pressed = false;
     }
 }
 
@@ -198,7 +207,7 @@ int main(int argc, char **argv)
     {
         if (argc != 4)
         {
-            std::cerr << "Usage: " << argv[0] << " ${n} ${r} ${num_iter}" << std::endl;
+            std::cerr << "Usage: " << argv[0] << " ${n} ${r: number, not a fraction} ${num_iter}" << std::endl;
             exit(1);
         }
         n = atoi(argv[1]);
@@ -229,11 +238,9 @@ int main(int argc, char **argv)
     glutAttachMenu(GLUT_RIGHT_BUTTON);
 
     glutMotionFunc(changePos);
-    glutMouseFunc(mousePressed); // used to detect if the left button is pressed
+    glutMouseFunc(mousePressed); // used to detect if the left button is pressed and where
 
     glutReshapeFunc(resize);
-
-    glutIdleFunc(nullptr);
 
     myinit(); /* set attributes */
 
