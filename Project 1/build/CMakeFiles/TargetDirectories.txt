@@ -1,3 +1,0 @@
-/home/kchristin/Documents/Computer_graphics/Project 1/build/CMakeFiles/output.dir
-/home/kchristin/Documents/Computer_graphics/Project 1/build/CMakeFiles/edit_cache.dir
-/home/kchristin/Documents/Computer_graphics/Project 1/build/CMakeFiles/rebuild_cache.dir
