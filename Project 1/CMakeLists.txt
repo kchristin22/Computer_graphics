@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 3.25)
-set(CMAKE_CXX_COMPILER "/usr/bin/g++")
 project(GRAPHICS)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+set(GLUT_INCLUDE_DIR "C:/MinGW/include")
+set(GLUT_glut_LIBRARY_RELEASE "C:/MinGW/bin/glut32.dll")
 # GLUT
 find_package(GLUT REQUIRED)
 include_directories(${GLUT_INCLUDE_DIR})

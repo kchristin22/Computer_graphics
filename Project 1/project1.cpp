@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <cstdlib>
 #include <math.h>
+#include <time.h>
 #include <unistd.h>
 #include <iostream>
+#include <windows.h>
 #include <GL/glut.h>
 
 uint8_t n = 6;                        /* number of vertices */
