@@ -1,0 +1,149 @@
+#include <stdio.h>
+#include <cstdlib>
+#include <unistd.h>
+#include <cmath>
+#include <iostream>
+#include <GL/glut.h>
+
+GLuint listIndex;
+
+int sign(double value){
+    if (value == 0) return value;
+    return value > 0 ? 1 : -1;
+}
+
+void draw_square(){
+    typedef GLfloat point3D[3];
+
+    point3D square_vertices[4];
+
+    uint8_t a = 5; 
+
+    for (size_t i = 0; i < 4; i++)
+    {
+        // square center (0,0,0)
+        square_vertices[i][1] = sign(cos(M_PI * i / 2 + M_PI / 2));
+        square_vertices[i][0] = sign(sin(M_PI * i / 2 + M_PI / 2));
+        square_vertices[i][2] = 0; // z = 0
+    }
+
+    // plots square
+    glBegin(GL_QUADS);
+        glVertex2fv(square_vertices[0]);
+        glVertex2fv(square_vertices[1]);
+        glVertex2fv(square_vertices[2]);
+        glVertex2fv(square_vertices[3]);
+    glEnd();
+}
+
+void myinit()
+{
+
+    // attributes 
+    glEnable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    glClearColor(1.0, 1.0, 1.0, 0.0); // white background
+
+    // set up viewing
+    // 500 x 500 window with origin lower left
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity(); // reset the matrix
+    glOrtho(0.0, 10.0, 0, 10.0, -10, 10);
+    glMatrixMode(GL_MODELVIEW);
+
+    listIndex = glGenLists(1);
+
+    if (!listIndex){
+        std::cerr << "List wasn't created" << std::endl;
+        return; 
+    }
+
+    glColor3f((float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX);
+    glNewList(listIndex, GL_COMPILE);
+        draw_square();
+    glEndList();
+    
+}
+void draw_cube(){
+    // front
+    glPushMatrix();
+    glTranslatef(0.0, 0.0, 1.0);
+    glColor3f(0.0, 1.0, 1.0);
+    glCallList(listIndex);
+    glPopMatrix();
+    // down
+    glPushMatrix();
+    glTranslatef(0.0, -1.0, 0);
+    glRotatef(90.0, 1.0, 0.0, 0.0);
+    glColor3f(0.871, 0, 0.98);
+    glCallList(listIndex);
+    glPopMatrix();
+    // back
+    glPushMatrix();
+    glTranslatef(0.0, 0.0, -1.0);
+    glColor3f(0.373, 0, 0.98);
+    glCallList(listIndex);
+    glPopMatrix();
+    // up
+    glPushMatrix();
+    glTranslatef(0.0, 1.0, 0);
+    glRotatef(90.0, 1.0, 0.0, 0.0);
+    glColor3f(0, 0.98, 0.478);
+    glCallList(listIndex);
+    glPopMatrix();
+    // left
+    glPushMatrix();
+    glTranslatef(-1.0, 0.0, 0.0);
+    glRotatef(90.0, 0.0, 1.0, 0.0);
+    glColor3f(0.98, 0.486, 0);
+    glCallList(listIndex);
+    glPopMatrix();
+    // right
+    glPushMatrix();
+    glTranslatef(1.0, 0.0, 0.0);
+    glRotatef(90.0, 0.0, 1.0, 0.0);
+    glColor3f(1, 0.157, 0.157);
+    glCallList(listIndex);
+    glPopMatrix();
+}
+
+static GLfloat theta = 0.0;
+
+void display()
+{
+    glDrawBuffer(GL_BACK);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the window
+	glLoadIdentity();
+    glTranslatef(5, 5, 0);
+	glRotatef(theta, 1.0, 2.0, 2.0);
+    // glScalef(25.0, 25.0, 25.0);
+
+    draw_cube();
+    
+    glutSwapBuffers();
+    glFlush(); // clear buffers
+
+}
+
+void rotate(){
+    theta += 1.0;
+	if( theta > 360.0 ) theta -= 360.0;
+    glutPostRedisplay();
+}
+
+int main(int argc, char **argv)
+{
+    // Standard GLUT initialization
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH); 
+    glutInitWindowSize(500, 500);                // 500 x 500 pixel window
+    glutInitWindowPosition(0, 0);                // place window top left on display
+    glutCreateWindow("Fractal");                 // window title
+    glutDisplayFunc(display);                    // display callback invoked when window opened
+    glutIdleFunc(rotate);
+
+    myinit(); // set attributes
+
+    glutMainLoop(); // enter event loop
+}
