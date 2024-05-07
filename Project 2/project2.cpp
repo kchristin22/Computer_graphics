@@ -6,6 +6,17 @@
 #include <GL/glut.h>
 
 GLuint listIndex;
+GLfloat a = 5;
+GLfloat b = 70;
+static GLfloat theta = 0.0;
+static GLfloat scale_factor = 1;
+
+enum ScaleDirection : uint8_t{
+    EXPAND = 0,
+    DIMINISH
+};
+
+static enum ScaleDirection direction{EXPAND}; 
 
 int sign(double value){
     if (value == 0) return value;
@@ -16,8 +27,6 @@ void draw_square(){
     typedef GLfloat point3D[3];
 
     point3D square_vertices[4];
-
-    uint8_t a = 5; 
 
     for (size_t i = 0; i < 4; i++)
     {
@@ -49,7 +58,7 @@ void myinit()
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity(); // reset the matrix
-    glOrtho(0.0, 10.0, 0, 10.0, -10, 10);
+    glOrtho(-250.0, 250.0, -250.0, 250.0, -250.0, 250.0);
     glMatrixMode(GL_MODELVIEW);
 
     listIndex = glGenLists(1);
@@ -59,7 +68,6 @@ void myinit()
         return; 
     }
 
-    glColor3f((float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX);
     glNewList(listIndex, GL_COMPILE);
         draw_square();
     glEndList();
@@ -108,27 +116,28 @@ void draw_cube(){
     glPopMatrix();
 }
 
-static GLfloat theta = 0.0;
-
 void display()
 {
     glDrawBuffer(GL_BACK);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the window
 	glLoadIdentity();
-    glTranslatef(5, 5, 0);
+    glTranslatef(0.0, 0.0, -b);
 	glRotatef(theta, 1.0, 2.0, 2.0);
-    // glScalef(25.0, 25.0, 25.0);
+    glScalef(scale_factor * a, scale_factor * a, scale_factor * a);
 
     draw_cube();
     
     glutSwapBuffers();
     glFlush(); // clear buffers
-
 }
 
 void rotate(){
     theta += 1.0;
-	if( theta > 360.0 ) theta -= 360.0;
+	if(theta > 360.0) theta -= 360.0;
+    // must: -70 -(scale_factor * a * side)/2 >= - 250 (to fit in the ortho field projection) or scale_factor * a * side <= 500
+    if(((scale_factor * a) >= 180 || (scale_factor * a) >= 250) && direction == EXPAND) direction = DIMINISH;  
+    else if(scale_factor * a <= 1) direction = EXPAND;
+    scale_factor = direction == EXPAND ? scale_factor + 0.05 : scale_factor - 0.05;
     glutPostRedisplay();
 }
 
