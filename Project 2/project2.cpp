@@ -116,14 +116,27 @@ void draw_cube(){
     glPopMatrix();
 }
 
-void display()
-{
+void display(){
     glDrawBuffer(GL_BACK);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the window
 	glLoadIdentity();
     glTranslatef(0.0, 0.0, -b);
 	glRotatef(theta, 1.0, 2.0, 2.0);
     glScalef(scale_factor * a, scale_factor * a, scale_factor * a);
+
+    draw_cube();
+    
+    glutSwapBuffers();
+    glFlush(); // clear buffers
+}
+
+void display2(){
+    glDrawBuffer(GL_BACK);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the window
+	glLoadIdentity();
+    glRotatef(theta, 0.0, 0.0, 1.0); // use translate instead
+    glTranslatef(0.0, 80.0, -8*b/10);
+    glScalef(20, 20, 20);
 
     draw_cube();
     
@@ -149,7 +162,7 @@ int main(int argc, char **argv)
     glutInitWindowSize(500, 500);                // 500 x 500 pixel window
     glutInitWindowPosition(0, 0);                // place window top left on display
     glutCreateWindow("Fractal");                 // window title
-    glutDisplayFunc(display);                    // display callback invoked when window opened
+    glutDisplayFunc(display2);                    // display callback invoked when window opened
     glutIdleFunc(rotate);
 
     myinit(); // set attributes
