@@ -136,8 +136,8 @@ void display2()
     glDrawBuffer(GL_BACK);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the window
     glLoadIdentity();
-    glRotatef(theta, 1.0, 1.0, 2.0); // use translate instead
-    glTranslatef(0.0, 80.0, -8 * b / 10);
+    glRotatef(theta, 1.0, 2.0, 2.0);
+    glTranslatef(0.0, 80.0, -8 * b / 10); // move to starting position of rotation
     glScalef(scale_factor * a, scale_factor * a, scale_factor * a);
 
     draw_cube();
@@ -164,11 +164,11 @@ void menu(int choice)
 {
     if (choice == 0)
     {
-        glutDisplayFunc(display); // display callback invoked when window opened
+        glutDisplayFunc(display); 
     }
     else if (choice == 1)
     {
-        glutDisplayFunc(display2); // display callback invoked when window opened
+        glutDisplayFunc(display2);
     }
 }
 
