@@ -37,15 +37,15 @@ void draw_square()
         // square center (0,0,0)
         square_vertices[i][1] = sign(cos(M_PI * i / 2 + M_PI / 2));
         square_vertices[i][0] = sign(sin(M_PI * i / 2 + M_PI / 2));
-        square_vertices[i][2] = 0; // z = 0
+        square_vertices[i][2] = 1; // z = 1
     }
 
     // plots square
     glBegin(GL_QUADS);
-    glVertex2fv(square_vertices[0]);
-    glVertex2fv(square_vertices[1]);
-    glVertex2fv(square_vertices[2]);
-    glVertex2fv(square_vertices[3]);
+    glVertex3fv(square_vertices[0]);
+    glVertex3fv(square_vertices[1]);
+    glVertex3fv(square_vertices[2]);
+    glVertex3fv(square_vertices[3]);
     glEnd();
 }
 
@@ -81,41 +81,36 @@ void draw_cube()
 {
     // front
     glPushMatrix();
-    glTranslatef(0.0, 0.0, 1.0);
     glColor3f(0.0, 1.0, 1.0);
     glCallList(listIndex);
     glPopMatrix();
     // down
     glPushMatrix();
-    glTranslatef(0.0, -1.0, 0);
     glRotatef(90.0, 1.0, 0.0, 0.0);
     glColor3f(0.871, 0, 0.98);
     glCallList(listIndex);
     glPopMatrix();
     // back
     glPushMatrix();
-    glTranslatef(0.0, 0.0, -1.0);
+    glTranslatef(0.0, 0.0, -2.0);
     glColor3f(0.373, 0, 0.98);
     glCallList(listIndex);
     glPopMatrix();
     // up
     glPushMatrix();
-    glTranslatef(0.0, 1.0, 0);
-    glRotatef(90.0, 1.0, 0.0, 0.0);
+    glRotatef(-90.0, 1.0, 0.0, 0.0);
     glColor3f(0, 0.98, 0.478);
-    glCallList(listIndex);
-    glPopMatrix();
-    // left
-    glPushMatrix();
-    glTranslatef(-1.0, 0.0, 0.0);
-    glRotatef(90.0, 0.0, 1.0, 0.0);
-    glColor3f(0.98, 0.486, 0);
     glCallList(listIndex);
     glPopMatrix();
     // right
     glPushMatrix();
-    glTranslatef(1.0, 0.0, 0.0);
     glRotatef(90.0, 0.0, 1.0, 0.0);
+    glColor3f(0.98, 0.486, 0);
+    glCallList(listIndex);
+    glPopMatrix();
+    // left
+    glPushMatrix();
+    glRotatef(-90.0, 0.0, 1.0, 0.0);
     glColor3f(1, 0.157, 0.157);
     glCallList(listIndex);
     glPopMatrix();
