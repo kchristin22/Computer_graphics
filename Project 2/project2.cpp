@@ -182,10 +182,10 @@ int main(int argc, char **argv)
     // Standard GLUT initialization
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
-    glutInitWindowSize(500, 500); // 500 x 500 pixel window
-    glutInitWindowPosition(0, 0); // place window top left on display
-    glutCreateWindow("Fractal");  // window title
-    glutDisplayFunc(display);     // display callback invoked when window opened
+    glutInitWindowSize(500, 500);      // 500 x 500 pixel window
+    glutInitWindowPosition(0, 0);      // place window top left on display
+    glutCreateWindow("Spinning cube"); // window title
+    glutDisplayFunc(display);          // display callback invoked when window opened
     glutIdleFunc(rotate);
 
     glutCreateMenu(menu);
