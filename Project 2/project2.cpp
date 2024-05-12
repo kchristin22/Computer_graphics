@@ -61,9 +61,14 @@ void myinit()
     // 500 x 500 window with origin lower left
 
     glMatrixMode(GL_PROJECTION);
-    glLoadIdentity(); // reset the matrix
-    glOrtho(-250.0, 250.0, -250.0, 250.0, -250.0, 250.0);
+    glLoadIdentity();                                     // reset the matrix
+    glOrtho(-250.0, 250.0, -250.0, 250.0, -250.0, 250.0); // near = 250.0, far = -250.0, no perspective
     glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    gluLookAt(
+        0, 0, 251, // camera pos, no objects are to be behind the camera
+        0, 0, 250, // camera target, z insignificant
+        0.0, 1.0, 0.0);
 
     listIndex = glGenLists(1);
 
@@ -137,7 +142,7 @@ void display2()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the window
     glLoadIdentity();
     glRotatef(theta, 1.0, 2.0, 2.0);
-    glTranslatef(0.0, 80.0, -8 * b / 10); // move to starting position of rotation
+    glTranslatef(0.0, 20.0, -8 * b / 10); // move to starting position of rotation
     glScalef(scale_factor * a, scale_factor * a, scale_factor * a);
 
     draw_cube();
@@ -151,8 +156,8 @@ void rotate()
     theta += 1.0;
     if (theta > 360.0)
         theta -= 360.0;
-    // must: -70 -(scale_factor * a * side)/2 >= - 250 (to fit in the ortho field projection) or scale_factor * a * side <= 500
-    if (((scale_factor * a) >= 100) && direction == EXPAND)
+    // susceptible to the clipping effect
+    if (((scale_factor * a) >= 45) && direction == EXPAND)
         direction = DIMINISH;
     else if (scale_factor * a <= 1)
         direction = EXPAND;
@@ -164,7 +169,7 @@ void menu(int choice)
 {
     if (choice == 0)
     {
-        glutDisplayFunc(display); 
+        glutDisplayFunc(display);
     }
     else if (choice == 1)
     {
