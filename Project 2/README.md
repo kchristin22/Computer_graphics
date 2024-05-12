@@ -8,4 +8,4 @@ To successfully compile and run the program you need to execute the follow comma
 4. `cmake ..`
 5. `cmake --build .`
 6. `cd bin/`
-7. `./outpu
+7. `./output`
