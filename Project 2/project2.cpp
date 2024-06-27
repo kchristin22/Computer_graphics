@@ -57,9 +57,6 @@ void myinit()
     glEnable(GL_DEPTH_TEST);
     glClearColor(1.0, 1.0, 1.0, 0.0); // white background
 
-    // set up viewing
-    // 500 x 500 window with origin lower left
-
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();                                     // reset the matrix
     glOrtho(-250.0, 250.0, -250.0, 250.0, -250.0, 250.0); // near = 250.0, far = -250.0, no perspective
