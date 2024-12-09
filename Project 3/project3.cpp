@@ -13,6 +13,8 @@ GLfloat b = 70;
 static GLfloat theta = 0.0;
 static GLfloat scale_factor = 1;
 
+#define DIV_SURF_ITER 4
+
 enum ScaleDirection : uint8_t
 {
     EXPAND = 0,
@@ -236,16 +238,168 @@ void draw_surface_tiles()
     }
 }
 
+void draw_sun()
+{
+    glColor3f(1.0, 0.984, 0.047); // yellow sun
+    GLfloat v[4][3] = {{0.0, 0.0, 1.0},
+                       {0.0, 0.942809, -0.33333},
+                       {-0.816497, -0.471405, -0.333333},
+                       {0.816497, -0.471405, -0.333333}};
+    int step = pow(2, DIV_SURF_ITER); // Number of steps per edge
+
+    // Normalize points
+    auto normalize = [](GLfloat p[3])
+    {
+        GLfloat magnitude = sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
+        for (int i = 0; i < 3; i++)
+        {
+            p[i] /= magnitude;
+        }
+    };
+
+    // Face 0: 0, 1, 2
+    // Face 1: 1, 2, 3
+    // Face 2: 2, 3, 0
+    // Face 3: 3, 0, 1
+    for (int face = 0; face < 4; face++)
+    {
+        GLint index[3] = {face, (face + 1) % 4, (face + 2) % 4};
+
+        // Repeat 4 times, which means draw 2^4 = 16 lines from each side (16 x
+        // 16 blocks)
+
+        GLfloat p0[3] = {0};
+        GLfloat p1[3] = {0};
+        GLfloat p2[3] = {0};
+
+        // Since we know the number of tiles from the beginning we can draw them
+        // as we move along two sides of a face:
+        //              v1
+        //              /_\
+        //             /   \
+        //           \/     \
+        //          \/_\     \
+        //          /\ /_\    \
+        //         /  \ /_\    \
+        //      v0 ------------- v2
+        //
+        // By moving along these lines (directions) (p0 on the left line and p1
+        // and p2 are subsequent on the right line) we can get each final small
+        // triangle till the right line.
+
+        GLfloat left_dir[3] = {(v[index[1]][0] - v[index[0]][0]) / step,
+                               (v[index[1]][1] - v[index[0]][1]) / step,
+                               (v[index[1]][2] - v[index[0]][2]) / step};
+
+        GLfloat right_dir[3] = {(v[index[2]][0] - v[index[0]][0]) / step,
+                                (v[index[2]][1] - v[index[0]][1]) / step,
+                                (v[index[2]][2] - v[index[0]][2]) / step};
+
+        for (int i = 0; i < step; i++)
+        {
+            for (int j = 0; j < step - i; j++) // number of tiles to be painted
+                                               // in each diagonal
+            {
+                for (int k = 0; k < 3; k++)
+                {
+                    p0[k] = v[index[0]][k] + i * left_dir[k] + j * right_dir[k];
+                    p1[k] = p0[k] + left_dir[k];
+                    p2[k] = p0[k] + right_dir[k];
+                }
+
+                normalize(p0);
+                normalize(p1);
+                normalize(p2);
+
+                glBegin(GL_TRIANGLES);
+                glVertex3fv(p0);
+                glVertex3fv(p1);
+                glVertex3fv(p2);
+                glEnd();
+
+                if (i + j < step)
+                { // Ensure we don't exceed bounds
+                    for (int k = 0; k < 3; k++)
+                    {
+                        p0[k] += left_dir[k] + right_dir[k];
+                    }
+
+                    normalize(p0);
+
+                    glBegin(GL_TRIANGLES);
+                    glVertex3fv(p0);
+                    glVertex3fv(p1);
+                    glVertex3fv(p2);
+                    glEnd();
+                }
+            }
+        }
+
+        for (int i = 0, pow_of_2 = 1; i < DIV_SURF_ITER; i++, pow_of_2 *= 2)
+        {
+            GLfloat p1[3] = {v[index[0]][0] + pow_of_2 * left_dir[0],
+                             v[index[0]][1] + pow_of_2 * left_dir[1],
+                             v[index[0]][2] + pow_of_2 * left_dir[2]};
+            GLfloat p2[3] = {v[index[0]][0] + pow_of_2 * right_dir[0],
+                             v[index[0]][1] + pow_of_2 * right_dir[1],
+                             v[index[0]][2] + pow_of_2 * right_dir[2]};
+            normalize(p1);
+            normalize(p2);
+
+            glBegin(GL_TRIANGLES);
+            glVertex3fv(v[index[0]]);
+            glVertex3fv(p1);
+            glVertex3fv(p2);
+            glEnd();
+
+            right_dir[0] = (v[index[2]][0] - v[index[1]][0]) / step;
+            right_dir[1] = (v[index[2]][1] - v[index[1]][1]) / step;
+            right_dir[2] = (v[index[2]][2] - v[index[1]][2]) / step;
+            for (int k = 0; k < 3; k++)
+            {
+                p1[k] = v[index[1]][k] - pow_of_2 * left_dir[k];
+                p2[k] = v[index[1]][k] + pow_of_2 * right_dir[k];
+            }
+            normalize(p1);
+            normalize(p2);
+
+            glBegin(GL_TRIANGLES);
+            glVertex3fv(v[index[1]]);
+            glVertex3fv(p1);
+            glVertex3fv(p2);
+            glEnd();
+
+            left_dir[0] = (v[index[2]][0] - v[index[0]][0]) / step;
+            left_dir[1] = (v[index[2]][1] - v[index[0]][1]) / step;
+            left_dir[2] = (v[index[2]][2] - v[index[0]][2]) / step;
+            for (int k = 0; k < 3; k++)
+            {
+                p1[k] = v[index[2]][k] + pow_of_2 * left_dir[k];
+                p2[k] = v[index[2]][k] - pow_of_2 * right_dir[k];
+            }
+            normalize(p1);
+            normalize(p2);
+            glBegin(GL_TRIANGLES);
+            glVertex3fv(v[index[2]]);
+            glVertex3fv(p1);
+            glVertex3fv(p2);
+            glEnd();
+            glEnd();
+        }
+    }
+}
+
 void display()
 {
     glDrawBuffer(GL_BACK);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the window
     glLoadIdentity();
     // glRotatef(90, 1.0, 0.0, 0.0);
-    // glScalef(10, 10, 10);
+    glScalef(50, 50, 50);
 
-    draw_house();
-    draw_surface();
+    // draw_house();
+    // draw_surface();
+    draw_sun();
 
     glutSwapBuffers();
     glFlush(); // clear buffers
@@ -257,7 +411,7 @@ void display2()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the window
     glLoadIdentity();
     // glRotatef(90, 1.0, 0.0, 0.0);
-    // glScalef(10, 10, 10);
+    // glScalef(40, 40, 40);
 
     draw_house();
     draw_surface_tiles();
@@ -278,7 +432,7 @@ void rotate()
         direction = EXPAND;
     scale_factor =
         direction == EXPAND ? scale_factor + 0.05 : scale_factor - 0.05;
-    glutPostRedisplay();
+    // glutPostRedisplay();
 }
 
 void menu_grass(int choice)
@@ -299,7 +453,8 @@ int main(int argc, char **argv)
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
     glutInitWindowSize(1000, 1000); // 1000 x 1000 pixel window
-    glutInitWindowPosition(0, 0);   // place window top left on display
+    glutInitWindowPosition(0,
+                           0); // place window top left on display
     glutCreateWindow("The house beyond the pines"); // window title
     glutDisplayFunc(display); // display callback invoked when window opened
     glutIdleFunc(rotate);
