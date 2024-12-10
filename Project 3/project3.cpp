@@ -430,14 +430,10 @@ void draw_sun()
 
     glCallList(listIndexSphere);
 
-    GLfloat specular[4] = {0.4, 0.4, 0.4, 1.0};
-    GLfloat ones[4] = {1.0, 1.0, 1.0, 1.0};
     GLfloat dir[4] = {1.0, 0.0, 0.0, 0.0};
     glLightfv(GL_LIGHT0, GL_POSITION, zero);
     glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, dir);
-    glLightfv(GL_LIGHT0, GL_SPECULAR, specular);
     glLightfv(GL_LIGHT0, GL_AMBIENT, zero);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, ones);
 }
 
 void display()
@@ -487,6 +483,26 @@ void rotate()
 
     double rotationSpeed = 10.0; // degrees per second
     theta += rotationSpeed * deltaTime;
+
+    GLfloat intensity = 0;
+    if (theta <= 90)
+        intensity =
+            0.4 +
+            (1.0 - 0.4) / 90 *
+                theta; // linear interpolation between
+                       // points (theta, intensity) = (0, 0.4) and (90, 1.0)
+    else
+        intensity =
+            0.4 -
+            (1.0 - 0.4) / 90 *
+                (theta -
+                 180); // linear interpolation between
+                       // points (theta, intensity) = (90, 1.0) and (180, 0.4)
+
+    GLfloat intensityv[4] = {intensity, intensity, intensity, 1.0};
+
+    glLightfv(GL_LIGHT0, GL_SPECULAR, intensityv);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, intensityv);
 
     // wrap the angle to stay within [0, 180]
     if (theta >= 180.0)
