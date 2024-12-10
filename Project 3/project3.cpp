@@ -271,21 +271,23 @@ void draw_sun()
         GLfloat p0[3] = {0};
         GLfloat p1[3] = {0};
         GLfloat p2[3] = {0};
+        GLfloat p3[3] = {0};
 
         // Since we know the number of tiles from the beginning we can draw them
         // as we move along two sides of a face:
         //              v1
         //              /_\
         //             /   \
-        //           \/     \
-        //          \/_\     \
-        //          /\ /_\    \
-        //         /  \ /_\    \
+        //   left_dir /     \
+        //         ^ /\      \
+        //        / /\/\      \
+        //       / /\ \/\      \
         //      v0 ------------- v2
-        //
-        // By moving along these lines (directions) (p0 on the left line and p1
-        // and p2 are subsequent on the right line) we can get each final small
-        // triangle till the right line.
+        //       -----> right_dir
+        // By moving along these lines (directions) (p0 and p1 are subsequent on
+        // the left-up line and and p2 resides on the right line) we can get
+        // each final small triangle as we move from the base towards the top
+        // (first right and then left-up).
 
         GLfloat left_dir[3] = {(v[index[1]][0] - v[index[0]][0]) / step,
                                (v[index[1]][1] - v[index[0]][1]) / step,
@@ -305,6 +307,7 @@ void draw_sun()
                     p0[k] = v[index[0]][k] + i * left_dir[k] + j * right_dir[k];
                     p1[k] = p0[k] + left_dir[k];
                     p2[k] = p0[k] + right_dir[k];
+                    p3[k] = p0[k] + left_dir[k] + right_dir[k];
                 }
 
                 normalize(p0);
@@ -317,77 +320,85 @@ void draw_sun()
                 glVertex3fv(p2);
                 glEnd();
 
-                if (i + j < step)
+                if (j < (step - i) - 1)
                 { // Ensure we don't exceed bounds
-                    for (int k = 0; k < 3; k++)
-                    {
-                        p0[k] += left_dir[k] + right_dir[k];
-                    }
-
-                    normalize(p0);
+                    normalize(p3);
 
                     glBegin(GL_TRIANGLES);
-                    glVertex3fv(p0);
+                    glVertex3fv(p3);
                     glVertex3fv(p1);
                     glVertex3fv(p2);
                     glEnd();
                 }
             }
         }
-
-        for (int i = 0, pow_of_2 = 1; i < DIV_SURF_ITER; i++, pow_of_2 *= 2)
-        {
-            GLfloat p1[3] = {v[index[0]][0] + pow_of_2 * left_dir[0],
-                             v[index[0]][1] + pow_of_2 * left_dir[1],
-                             v[index[0]][2] + pow_of_2 * left_dir[2]};
-            GLfloat p2[3] = {v[index[0]][0] + pow_of_2 * right_dir[0],
-                             v[index[0]][1] + pow_of_2 * right_dir[1],
-                             v[index[0]][2] + pow_of_2 * right_dir[2]};
-            normalize(p1);
-            normalize(p2);
-
-            glBegin(GL_TRIANGLES);
-            glVertex3fv(v[index[0]]);
-            glVertex3fv(p1);
-            glVertex3fv(p2);
-            glEnd();
-
-            right_dir[0] = (v[index[2]][0] - v[index[1]][0]) / step;
-            right_dir[1] = (v[index[2]][1] - v[index[1]][1]) / step;
-            right_dir[2] = (v[index[2]][2] - v[index[1]][2]) / step;
-            for (int k = 0; k < 3; k++)
-            {
-                p1[k] = v[index[1]][k] - pow_of_2 * left_dir[k];
-                p2[k] = v[index[1]][k] + pow_of_2 * right_dir[k];
-            }
-            normalize(p1);
-            normalize(p2);
-
-            glBegin(GL_TRIANGLES);
-            glVertex3fv(v[index[1]]);
-            glVertex3fv(p1);
-            glVertex3fv(p2);
-            glEnd();
-
-            left_dir[0] = (v[index[2]][0] - v[index[0]][0]) / step;
-            left_dir[1] = (v[index[2]][1] - v[index[0]][1]) / step;
-            left_dir[2] = (v[index[2]][2] - v[index[0]][2]) / step;
-            for (int k = 0; k < 3; k++)
-            {
-                p1[k] = v[index[2]][k] + pow_of_2 * left_dir[k];
-                p2[k] = v[index[2]][k] - pow_of_2 * right_dir[k];
-            }
-            normalize(p1);
-            normalize(p2);
-            glBegin(GL_TRIANGLES);
-            glVertex3fv(v[index[2]]);
-            glVertex3fv(p1);
-            glVertex3fv(p2);
-            glEnd();
-            glEnd();
-        }
     }
 }
+
+// 2nd version of draw_sun() as a recursive function:
+// -------------------------------------------------------------------------------
+/*
+void draw_sun_recursive(GLfloat v0[3], GLfloat v1[3], GLfloat v2[3], int
+depth)
+{
+    // Normalize midpoints to project onto sphere
+    auto normalize = [](GLfloat p[3])
+    {
+        GLfloat magnitude = sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
+        for (int i = 0; i < 3; i++)
+        {
+            p[i] /= magnitude;
+        }
+    };
+
+    if (depth == 0)
+    {
+        normalize(v0);
+        normalize(v1);
+        normalize(v2);
+        glBegin(GL_TRIANGLES);
+        glVertex3fv(v0);
+        glVertex3fv(v1);
+        glVertex3fv(v2);
+        glEnd();
+        return;
+    }
+
+    // Compute midpoints
+    GLfloat midAB[3], midBC[3], midCA[3];
+    for (int i = 0; i < 3; i++)
+    {
+        midAB[i] = (v0[i] + v1[i]) / 2.0f;
+        midBC[i] = (v1[i] + v2[i]) / 2.0f;
+        midCA[i] = (v2[i] + v0[i]) / 2.0f;
+    }
+
+    // Recursively subdivide triangles
+    draw_sun_recursive(v0, midAB, midCA, depth - 1);
+    draw_sun_recursive(v1, midBC, midAB, depth - 1);
+    draw_sun_recursive(v2, midCA, midBC, depth - 1);
+    draw_sun_recursive(midAB, midBC, midCA, depth - 1);
+}
+
+void draw_sun()
+{
+    glColor3f(1.0, 0.984, 0.047); // Yellow sun
+
+    // Initial tetrahedron vertices
+    GLfloat v[4][3] = {{0.0, 0.0, 1.0},
+                       {-0.816497, -0.471405, -0.333333},
+                       {0.816497, -0.471405, -0.333333},
+                       {0.0, 0.942809, -0.33333}};
+
+    int depth = 4; // Number of subdivisions
+
+    // Subdivide each face of the tetrahedron
+    for (int face = 0; face < 4; face++)
+        draw_sun_recursive(v[face], v[(face + 1) % 4], v[(face + 2) % 4],
+                           depth);
+}
+*/
+// -------------------------------------------------------------------------------
 
 void display()
 {
