@@ -22,6 +22,14 @@ int sign(double value)
     return value > 0 ? 1 : -1;
 }
 
+void set_normal_v(GLfloat a[3], GLfloat b[3])
+{
+    // (a1​,a2​,a3​)×(b1​,b2​,b3​)=(a2​b3​−a3​b2​,a3​b1​−a1​b3​,a1​b2​−a2​b1​)
+    GLfloat normalv[3] = {a[1] * b[2] - a[2] * b[0], a[2] * b[0] - a[0] * b[2],
+                          a[0] * b[1] - a[1] * b[0]};
+    glNormal3fv(normalv);
+}
+
 void draw_square()
 {
     typedef GLfloat point3D[3];
@@ -320,7 +328,6 @@ void draw_house()
     glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, zero);
 
     GLfloat red[4] = {0.698, 0.13, 0.13, 1.0}; // dark shade of red for the roof
-    glNormal3f(-1.0, 0.0, 0.0);
 
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, red);
     glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS,
@@ -423,8 +430,8 @@ void draw_sun()
     glTranslatef(-50.0, 0.0, 0.0);
 
     GLfloat zero[4] = {0.0, 0.0, 0.0, 1.0};
-    GLfloat sunEmissionColor[4] = {1.0, 0.996, 0.7, 1.0};
-    glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, sunEmissionColor);
+    GLfloat sun_emission[4] = {1.0, 0.996, 0.7, 1.0};
+    glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, sun_emission);
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, zero);
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, zero);
 
@@ -523,6 +530,18 @@ void menu_grass(int choice)
     }
 }
 
+void menu_shader(int choice)
+{
+    if (choice == 0)
+    {
+        glShadeModel(GL_SMOOTH);
+    }
+    else if (choice == 1)
+    {
+        glShadeModel(GL_FLAT);
+    }
+}
+
 int main(int argc, char **argv)
 {
     // Standard GLUT initialization
@@ -545,6 +564,14 @@ int main(int argc, char **argv)
 
     // Associate a mouse button with menu
     glutAttachMenu(GLUT_RIGHT_BUTTON);
+
+    glutCreateMenu(menu_shader);
+    // Add menu items
+    glutAddMenuEntry("Smooth shading", 0);
+    glutAddMenuEntry("Flat shading", 1);
+
+    // Associate a mouse button with menu
+    glutAttachMenu(GLUT_LEFT_BUTTON);
 
     myinit(); // set attributes
 
