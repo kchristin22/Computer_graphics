@@ -1,4 +1,5 @@
 #include <GL/glut.h>
+#include <chrono>
 #include <cmath>
 #include <cstdlib>
 #include <iostream>
@@ -8,20 +9,11 @@
 GLuint listIndexRect;
 GLuint listIndexSquare;
 GLuint listIndexTriangle;
-GLfloat a = 5;
-GLfloat b = 70;
+GLuint listIndexSphere;
 static GLfloat theta = 0.0;
-static GLfloat scale_factor = 1;
+std::chrono::_V2::steady_clock::time_point lastTime;
 
 #define DIV_SURF_ITER 4
-
-enum ScaleDirection : uint8_t
-{
-    EXPAND = 0,
-    DIMINISH
-};
-
-static enum ScaleDirection direction { EXPAND };
 
 int sign(double value)
 {
@@ -88,159 +80,8 @@ void draw_triangle()
     glEnd();
 }
 
-void myinit()
+void draw_sphere()
 {
-
-    // attributes
-    glEnable(GL_BLEND);
-    glEnable(GL_DEPTH_TEST);
-    glClearColor(1.0, 1.0, 1.0, 0.0); // white background
-
-    // set up viewing
-    // 500 x 500 window with origin lower left
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity(); // reset the matrix
-    glOrtho(-50.0, 50.0, -50.0, 50.0, -50.0,
-            50.0); // near = 50.0, far = -50.0, no perspective
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    gluLookAt(0, 0, 51, // camera pos, no objects are to be behind the camera
-              0, 0, 50, // camera target, z insignificant
-              0.0, 1.0, 0.0);
-
-    listIndexRect = glGenLists(1);
-    if (!listIndexRect)
-    {
-        std::cerr << "Rect list wasn't created" << std::endl;
-        return;
-    }
-
-    glNewList(listIndexRect, GL_COMPILE);
-    draw_rectangle();
-    glEndList();
-
-    listIndexSquare = glGenLists(1);
-
-    if (!listIndexSquare)
-    {
-        std::cerr << "Square list wasn't created" << std::endl;
-        return;
-    }
-
-    glNewList(listIndexSquare, GL_COMPILE);
-    draw_square();
-    glEndList();
-
-    listIndexTriangle = glGenLists(1);
-
-    if (!listIndexSquare)
-    {
-        std::cerr << "Triangle list wasn't created" << std::endl;
-        return;
-    }
-
-    glNewList(listIndexTriangle, GL_COMPILE);
-    draw_triangle();
-    glEndList();
-}
-void draw_house()
-{
-    glColor3f(0.698, 0.13, 0.13); // dark shade of red for the roof
-    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS,
-                100); // rooftop is metallic (reflective)
-
-    // right top
-    glPushMatrix();
-    glTranslatef(5, 10, 0.0);     // change coo center to right top of the house
-    glRotatef(30, 0.0, 0.0, 1.0); // rotate rectangle (90 - 60) = 30 degrees
-    glTranslatef(-5, 0, 0);       // change axis of rectangle
-    glCallList(listIndexRect);
-    glPopMatrix();
-
-    // left top
-    glPushMatrix();
-    glTranslatef(-5, 10, 0.0);     // change coo center to left top of the house
-    glRotatef(-30, 0.0, 0.0, 1.0); // rotate rectangle (-90 - 60) = -30 degrees
-    glTranslatef(-5, 0, 0);        // change axis of rectangle
-    glCallList(listIndexRect);
-    glPopMatrix();
-
-    // front triangle
-    glPushMatrix();
-    glCallList(listIndexTriangle);
-    glPopMatrix();
-
-    // back triangle
-    glPushMatrix();
-    glTranslatef(0, 0, -20);
-    glCallList(listIndexTriangle);
-    glPopMatrix();
-
-    glColor3f(1.0, 0.9725, 0.8627); // light shade of brown for the walls
-    GLfloat specular[4] = {0, 0, 0, 1.0};
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,
-                 specular); // no specular highlight
-    GLfloat diffuse[4] = {1.0, 0.9725, 0.8627, 1.0};
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, diffuse);
-
-    // back
-    glPushMatrix();
-    glTranslatef(0.0, 0.0, -20.0); // square is on z = 10
-    glCallList(listIndexSquare);
-    glPopMatrix();
-
-    // front
-    glPushMatrix();
-    glCallList(listIndexSquare);
-    glPopMatrix();
-
-    // left side (x = -5)
-    glPushMatrix();
-    glTranslatef(-10.0, 0.0, 0.0);
-    glCallList(listIndexRect);
-    glPopMatrix();
-
-    // right side (x = 5)
-    glPushMatrix();
-    glCallList(listIndexRect);
-    glPopMatrix();
-}
-
-void draw_surface()
-{
-    glColor3f(0.0, 0.5, 0.0); // green surface
-
-    glBegin(GL_QUADS);
-    glVertex3f(-50, 0, -50);
-    glVertex3f(-50, 0, 50);
-    glVertex3f(50, 0, 50);
-    glVertex3f(50, 0, -50);
-    glEnd();
-}
-
-void draw_surface_tiles()
-{
-    glColor3f(0.0, 0.5, 0.0); // green surface
-
-    // Divide the surface into 100 tiles: Each row and column of the divided
-    // surface should consist of 10 tiles (10 tiles x 10 tiles = 100). The
-    // surface is 100 x 100 (y=0). Hence, each tile is 10 x 10.
-    for (int i = 0; i < 100; i++)
-    {
-        glBegin(GL_QUADS);
-        GLint bottom_left[3] = {-50 + (i % 10) * 10, 0, -50 + (i / 10) * 10};
-        glVertex3iv(bottom_left);
-        glVertex3i(bottom_left[0], 0, bottom_left[2] + 10);      // top left
-        glVertex3i(bottom_left[0] + 10, 0, bottom_left[2] + 10); // top right
-        glVertex3i(bottom_left[0] + 10, 0, bottom_left[2]);      // bottom right
-        glEnd();
-    }
-}
-
-void draw_sun()
-{
-    glColor3f(1.0, 0.984, 0.047); // yellow sun
     GLfloat v[4][3] = {{0.0, 0.0, 1.0},
                        {0.0, 0.942809, -0.33333},
                        {-0.816497, -0.471405, -0.333333},
@@ -335,10 +176,10 @@ void draw_sun()
     }
 }
 
-// 2nd version of draw_sun() as a recursive function:
+// 2nd version of draw_sphere() as a recursive function:
 // -------------------------------------------------------------------------------
 /*
-void draw_sun_recursive(GLfloat v0[3], GLfloat v1[3], GLfloat v2[3], int
+void draw_sphere_recursive(GLfloat v0[3], GLfloat v1[3], GLfloat v2[3], int
 depth)
 {
     // Normalize midpoints to project onto sphere
@@ -374,16 +215,14 @@ depth)
     }
 
     // Recursively subdivide triangles
-    draw_sun_recursive(v0, midAB, midCA, depth - 1);
-    draw_sun_recursive(v1, midBC, midAB, depth - 1);
-    draw_sun_recursive(v2, midCA, midBC, depth - 1);
-    draw_sun_recursive(midAB, midBC, midCA, depth - 1);
+    draw_sphere_recursive(v0, midAB, midCA, depth - 1);
+    draw_sphere_recursive(v1, midBC, midAB, depth - 1);
+    draw_sphere_recursive(v2, midCA, midBC, depth - 1);
+    draw_sphere_recursive(midAB, midBC, midCA, depth - 1);
 }
 
-void draw_sun()
+void draw_sphere()
 {
-    glColor3f(1.0, 0.984, 0.047); // Yellow sun
-
     // Initial tetrahedron vertices
     GLfloat v[4][3] = {{0.0, 0.0, 1.0},
                        {-0.816497, -0.471405, -0.333333},
@@ -394,23 +233,226 @@ void draw_sun()
 
     // Subdivide each face of the tetrahedron
     for (int face = 0; face < 4; face++)
-        draw_sun_recursive(v[face], v[(face + 1) % 4], v[(face + 2) % 4],
+        draw_sphere_recursive(v[face], v[(face + 1) % 4], v[(face + 2) % 4],
                            depth);
 }
 */
 // -------------------------------------------------------------------------------
+
+void myinit()
+{
+
+    // attributes
+    // GLfloat global_ambient[] = {0.5f, 0.5f, 0.5f, 1.0f};
+    // glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
+
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+
+    glEnable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    glClearColor(1.0, 1.0, 1.0, 0.0); // white background
+
+    // set up viewing
+    // 500 x 500 window with origin lower left
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity(); // reset the matrix
+    glOrtho(-50.0, 50.0, -50.0, 50.0, -50.0,
+            50.0); // near = 50.0, far = -50.0, no perspective
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    gluLookAt(0, 0, 51, // camera pos, no objects are to be behind the camera
+              0, 0, 50, // camera target, z insignificant
+              0.0, 1.0, 0.0);
+
+    listIndexRect = glGenLists(1);
+    if (!listIndexRect)
+    {
+        std::cerr << "Rect list wasn't created" << std::endl;
+        return;
+    }
+
+    glNewList(listIndexRect, GL_COMPILE);
+    draw_rectangle();
+    glEndList();
+
+    listIndexSquare = glGenLists(1);
+
+    if (!listIndexSquare)
+    {
+        std::cerr << "Square list wasn't created" << std::endl;
+        return;
+    }
+
+    glNewList(listIndexSquare, GL_COMPILE);
+    draw_square();
+    glEndList();
+
+    listIndexTriangle = glGenLists(1);
+
+    if (!listIndexSquare)
+    {
+        std::cerr << "Triangle list wasn't created" << std::endl;
+        return;
+    }
+
+    glNewList(listIndexTriangle, GL_COMPILE);
+    draw_triangle();
+    glEndList();
+
+    listIndexSphere = glGenLists(1);
+
+    if (!listIndexSphere)
+    {
+        std::cerr << "Sphere list wasn't created" << std::endl;
+        return;
+    }
+
+    glNewList(listIndexSphere, GL_COMPILE);
+    draw_sphere();
+    glEndList();
+}
+
+void draw_house()
+{
+    GLfloat zero[4] = {0.0, 0.0, 0.0, 1.0};
+    glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, zero);
+
+    GLfloat red[4] = {0.698, 0.13, 0.13, 1.0}; // dark shade of red for the roof
+    glNormal3f(-1.0, 0.0, 0.0);
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, red);
+    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS,
+                100); // rooftop is metallic (reflective)
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, red);
+
+    // right top
+    glPushMatrix();
+    glTranslatef(5, 10, 0.0);     // change coo center to right top of the house
+    glRotatef(30, 0.0, 0.0, 1.0); // rotate rectangle (90 - 60) = 30 degrees
+    glTranslatef(-5, 0, 0);       // change axis of rectangle
+    glCallList(listIndexRect);
+    glPopMatrix();
+
+    // left top
+    glPushMatrix();
+    glTranslatef(-5, 10, 0.0);     // change coo center to left top of the house
+    glRotatef(-30, 0.0, 0.0, 1.0); // rotate rectangle (-90 - 60) = -30 degrees
+    glTranslatef(-5, 0, 0);        // change axis of rectangle
+    glCallList(listIndexRect);
+    glPopMatrix();
+
+    // front triangle
+    glPushMatrix();
+    glCallList(listIndexTriangle);
+    glPopMatrix();
+
+    // back triangle
+    glPushMatrix();
+    glTranslatef(0, 0, -20);
+    glCallList(listIndexTriangle);
+    glPopMatrix();
+
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,
+                 zero); // no specular highlight
+    GLfloat diffuse[4] = {1.0, 0.91, 0.714,
+                          1.0}; // light shade of brown for the walls
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, diffuse);
+
+    // back
+    glPushMatrix();
+    glTranslatef(0.0, 0.0, -20.0); // square is on z = 10
+    glCallList(listIndexSquare);
+    glPopMatrix();
+
+    // front
+    glPushMatrix();
+    glCallList(listIndexSquare);
+    glPopMatrix();
+
+    // left side (x = -5)
+    glPushMatrix();
+    glTranslatef(-10.0, 0.0, 0.0);
+    glCallList(listIndexRect);
+    glPopMatrix();
+
+    // right side (x = 5)
+    glPushMatrix();
+    glCallList(listIndexRect);
+    glPopMatrix();
+}
+
+void draw_surface()
+{
+    GLfloat green[4] = {0.0, 0.5, 0.0, 1.0}; // green surface
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, green);
+
+    glBegin(GL_QUADS);
+    glVertex3f(-50, 0, -50);
+    glVertex3f(-50, 0, 50);
+    glVertex3f(50, 0, 50);
+    glVertex3f(50, 0, -50);
+    glEnd();
+}
+
+void draw_surface_tiles()
+{
+    GLfloat green[4] = {0.0, 0.5, 0.0, 1.0}; // green surface
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, green);
+
+    // Divide the surface into 100 tiles: Each row and column of the divided
+    // surface should consist of 10 tiles (10 tiles x 10 tiles = 100). The
+    // surface is 100 x 100 (y=0). Hence, each tile is 10 x 10.
+    for (int i = 0; i < 100; i++)
+    {
+        glBegin(GL_QUADS);
+        GLint bottom_left[3] = {-50 + (i % 10) * 10, 0, -50 + (i / 10) * 10};
+        glVertex3iv(bottom_left);
+        glVertex3i(bottom_left[0], 0, bottom_left[2] + 10);      // top left
+        glVertex3i(bottom_left[0] + 10, 0, bottom_left[2] + 10); // top right
+        glVertex3i(bottom_left[0] + 10, 0, bottom_left[2]);      // bottom right
+        glEnd();
+    }
+}
+
+void draw_sun()
+{
+    glRotatef(theta, 0.0, 0.0, -1.0); // z positive axis points towards viewer,
+                                      // so we rotate around z negative axis
+    glTranslatef(-50.0, 0.0, 0.0);
+
+    GLfloat zero[4] = {0.0, 0.0, 0.0, 1.0};
+    GLfloat sunEmissionColor[4] = {1.0, 0.996, 0.7, 1.0};
+    glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, sunEmissionColor);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, zero);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, zero);
+
+    glCallList(listIndexSphere);
+
+    GLfloat specular[4] = {0.4, 0.4, 0.4, 1.0};
+    GLfloat ones[4] = {1.0, 1.0, 1.0, 1.0};
+    GLfloat dir[4] = {1.0, 0.0, 0.0, 0.0};
+    glLightfv(GL_LIGHT0, GL_POSITION, zero);
+    glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, dir);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, specular);
+    glLightfv(GL_LIGHT0, GL_AMBIENT, zero);
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, ones);
+}
 
 void display()
 {
     glDrawBuffer(GL_BACK);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the window
     glLoadIdentity();
-    // glRotatef(90, 1.0, 0.0, 0.0);
-    glScalef(50, 50, 50);
+    glRotatef(90, 1.0, 0.0, 0.0);
+    // glScalef(50, 50, 50);
 
-    // draw_house();
-    // draw_surface();
+    draw_house();
+    draw_surface();
     draw_sun();
+
+    // glEnable(GL_NORMALIZE);
 
     glutSwapBuffers();
     glFlush(); // clear buffers
@@ -421,11 +463,14 @@ void display2()
     glDrawBuffer(GL_BACK);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the window
     glLoadIdentity();
-    // glRotatef(90, 1.0, 0.0, 0.0);
+    glRotatef(90, 1.0, 0.0, 0.0);
     // glScalef(40, 40, 40);
 
     draw_house();
     draw_surface_tiles();
+    draw_sun();
+
+    // glEnable(GL_NORMALIZE);
 
     glutSwapBuffers();
     glFlush(); // clear buffers
@@ -433,17 +478,21 @@ void display2()
 
 void rotate()
 {
-    theta += 1.0;
-    if (theta > 360.0)
-        theta -= 360.0;
-    // susceptible to the clipping effect
-    if (((scale_factor * a) >= 45) && direction == EXPAND)
-        direction = DIMINISH;
-    else if (scale_factor * a <= 1)
-        direction = EXPAND;
-    scale_factor =
-        direction == EXPAND ? scale_factor + 0.05 : scale_factor - 0.05;
-    // glutPostRedisplay();
+    auto currentTime = std::chrono::steady_clock::now();
+
+    double deltaTime =
+        std::chrono::duration<double>(currentTime - lastTime).count();
+
+    lastTime = currentTime;
+
+    double rotationSpeed = 10.0; // degrees per second
+    theta += rotationSpeed * deltaTime;
+
+    // wrap the angle to stay within [0, 180]
+    if (theta >= 180.0)
+        theta -= 180.0;
+
+    glutPostRedisplay();
 }
 
 void menu_grass(int choice)
@@ -468,6 +517,9 @@ int main(int argc, char **argv)
                            0); // place window top left on display
     glutCreateWindow("The house beyond the pines"); // window title
     glutDisplayFunc(display); // display callback invoked when window opened
+
+    lastTime = std::chrono::steady_clock::now();
+
     glutIdleFunc(rotate);
 
     glutCreateMenu(menu_grass);
