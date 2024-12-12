@@ -292,13 +292,9 @@ void myinit()
 {
 
     // attributes
-    // GLfloat global_ambient[] = {0.5f, 0.5f, 0.5f, 1.0f};
-    // glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
-
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
 
-    glEnable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
     glClearColor(1.0, 1.0, 1.0, 0.0); // white background
 
@@ -314,6 +310,8 @@ void myinit()
     gluLookAt(0, 0, 51, // camera pos, no objects are to be behind the camera
               0, 0, 50, // camera target, z insignificant
               0.0, 1.0, 0.0);
+
+    glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE); // use viewer location
 
     listIndexRect = glGenLists(1);
     if (!listIndexRect)
@@ -524,9 +522,15 @@ void draw_sun()
 
     glCallList(listIndexSphere);
 
+    zero[4] = 0.0; // distant light source
     GLfloat dir[4] = {1.0, 0.0, 0.0, 0.0};
     glLightfv(GL_LIGHT0, GL_POSITION, zero);
-    glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, dir);
+    glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION,
+              dir); // Cutoff angle is 180 by default and damping exponent is 0.
+                    // This effect is simulated by the intensity of the light.
+                    // Also, the light source is distant, so the distance from
+                    // it doesn't affect the intensity of the light ( no need to
+                    // set attenuation coeffecients).
     glLightfv(GL_LIGHT0, GL_AMBIENT, zero);
 }
 
@@ -535,7 +539,7 @@ void display()
     glDrawBuffer(GL_BACK);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the window
     glLoadIdentity();
-    glRotatef(90, 1.0, 0.0, 0.0);
+    glRotatef(90, 0.0, 1.0, 0.0);
     // glScalef(50, 50, 50);
 
     draw_house();
