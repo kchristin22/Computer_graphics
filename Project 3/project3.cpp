@@ -22,11 +22,33 @@ int sign(double value)
     return value > 0 ? 1 : -1;
 }
 
+GLfloat *reverse(GLfloat a[3])
+{
+    GLfloat *b = new GLfloat[3];
+    b[0] = -a[0];
+    b[1] = -a[1];
+    b[2] = -a[2];
+
+    return b;
+}
+
+void normalize(GLfloat p[3])
+{
+    GLfloat magnitude = sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
+    if (magnitude == 0)
+        return;
+    for (int i = 0; i < 3; i++)
+    {
+        p[i] /= magnitude;
+    }
+}
+
 void set_normal_v(GLfloat a[3], GLfloat b[3])
 {
     // (a1​,a2​,a3​)×(b1​,b2​,b3​)=(a2​b3​−a3​b2​,a3​b1​−a1​b3​,a1​b2​−a2​b1​)
     GLfloat normalv[3] = {a[1] * b[2] - a[2] * b[0], a[2] * b[0] - a[0] * b[2],
                           a[0] * b[1] - a[1] * b[0]};
+    normalize(normalv);
     glNormal3fv(normalv);
 }
 
@@ -34,22 +56,36 @@ void draw_square()
 {
     typedef GLfloat point3D[3];
 
-    point3D square_vertices[4];
+    point3D vertices[4];
 
     for (size_t i = 0; i < 4; i++)
     {
         // square center (0,5,10)
-        square_vertices[i][1] = 5 + 5 * sign(cos(M_PI * i / 2 + M_PI / 2));
-        square_vertices[i][0] = 5 * sign(sin(M_PI * i / 2 + M_PI / 2));
-        square_vertices[i][2] = 10; // z = 10
+        vertices[i][1] = 5 + 5 * sign(cos(M_PI * i / 2 + M_PI / 2));
+        vertices[i][0] = -5 * sign(sin(M_PI * i / 2 + M_PI / 2));
+        vertices[i][2] = 10; // z = 10
+    }
+
+    point3D diffs[4] = {0};
+    for (size_t i = 1; i <= 4; i++)
+    {
+        // find vector differences
+        diffs[i - 1][0] = vertices[i % 4][0] - vertices[i - 1][0];
+        diffs[i - 1][1] = vertices[i % 4][1] - vertices[i - 1][1];
+        diffs[i - 1][2] = vertices[i % 4][2] - vertices[i - 1][2];
     }
 
     // plots square
     glBegin(GL_QUADS);
-    glVertex3fv(square_vertices[0]);
-    glVertex3fv(square_vertices[1]);
-    glVertex3fv(square_vertices[2]);
-    glVertex3fv(square_vertices[3]);
+    set_normal_v(diffs[0],
+                 reverse(diffs[3])); // vertice ordering is anti-clockwise
+    glVertex3fv(vertices[0]);
+    set_normal_v(diffs[1], reverse(diffs[0]));
+    glVertex3fv(vertices[1]);
+    set_normal_v(diffs[2], reverse(diffs[1]));
+    glVertex3fv(vertices[2]);
+    set_normal_v(diffs[3], reverse(diffs[2]));
+    glVertex3fv(vertices[3]);
     glEnd();
 }
 
@@ -60,11 +96,24 @@ void draw_rectangle()
     // right side of the house: x = 10/2 = 5, y = 10 or 0, z = +- 20/2 = +-10
     point3D vertices[4] = {{5, 10, -10}, {5, 10, 10}, {5, 0, 10}, {5, 0, -10}};
 
-    // plot square
+    point3D diffs[4] = {0};
+    for (size_t i = 1; i <= 4; i++)
+    {
+        // find vector differences
+        diffs[i - 1][0] = vertices[i % 4][0] - vertices[i - 1][0];
+        diffs[i - 1][1] = vertices[i % 4][1] - vertices[i - 1][1];
+        diffs[i - 1][2] = vertices[i % 4][2] - vertices[i - 1][2];
+    }
+
+    // plot recatangle
     glBegin(GL_QUADS);
+    set_normal_v(diffs[0], reverse(diffs[3]));
     glVertex3fv(vertices[0]);
+    set_normal_v(diffs[1], reverse(diffs[0]));
     glVertex3fv(vertices[1]);
+    set_normal_v(diffs[2], reverse(diffs[1]));
     glVertex3fv(vertices[2]);
+    set_normal_v(diffs[3], reverse(diffs[2]));
     glVertex3fv(vertices[3]);
     glEnd();
 }
@@ -80,10 +129,22 @@ void draw_triangle()
                                    // * 10 = 10 + 5 * sqrt(3), z = 10
         {-5, 10, 10}};
 
+    point3D diffs[3] = {0};
+    for (size_t i = 1; i <= 3; i++)
+    {
+        // find vector differences
+        diffs[i - 1][0] = vertices[i % 3][0] - vertices[i - 1][0];
+        diffs[i - 1][1] = vertices[i % 3][1] - vertices[i - 1][1];
+        diffs[i - 1][2] = vertices[i % 3][2] - vertices[i - 1][2];
+    }
+
     // plot triangle
     glBegin(GL_TRIANGLES);
+    set_normal_v(diffs[0], reverse(diffs[2]));
     glVertex3fv(vertices[0]);
+    set_normal_v(diffs[1], reverse(diffs[0]));
     glVertex3fv(vertices[1]);
+    set_normal_v(diffs[2], reverse(diffs[1]));
     glVertex3fv(vertices[2]);
     glEnd();
 }
@@ -95,16 +156,6 @@ void draw_sphere()
                        {-0.816497, -0.471405, -0.333333},
                        {0.816497, -0.471405, -0.333333}};
     int step = pow(2, DIV_SURF_ITER); // Number of steps per edge
-
-    // Normalize points
-    auto normalize = [](GLfloat p[3])
-    {
-        GLfloat magnitude = sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
-        for (int i = 0; i < 3; i++)
-        {
-            p[i] /= magnitude;
-        }
-    };
 
     // Face 0: 0, 1, 2
     // Face 1: 1, 2, 3
@@ -190,16 +241,6 @@ void draw_sphere()
 void draw_sphere_recursive(GLfloat v0[3], GLfloat v1[3], GLfloat v2[3], int
 depth)
 {
-    // Normalize midpoints to project onto sphere
-    auto normalize = [](GLfloat p[3])
-    {
-        GLfloat magnitude = sqrt(p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
-        for (int i = 0; i < 3; i++)
-        {
-            p[i] /= magnitude;
-        }
-    };
-
     if (depth == 0)
     {
         normalize(v0);
@@ -336,17 +377,22 @@ void draw_house()
 
     // right top
     glPushMatrix();
-    glTranslatef(5, 10, 0.0);     // change coo center to right top of the house
-    glRotatef(30, 0.0, 0.0, 1.0); // rotate rectangle (90 - 60) = 30 degrees
-    glTranslatef(-5, 0, 0);       // change axis of rectangle
+    glTranslatef(2.5, 10 + sqrt(3.0) * 2.5,
+                 0);         // change rect center to right top of the house
+    glRotated(30, 0, 0, 1);  // rotate rectangle 60 / 2 = 30 degrees
+    glTranslated(-5, -5, 0); // move center of rectangle to (0,0,0)
     glCallList(listIndexRect);
     glPopMatrix();
 
     // left top
     glPushMatrix();
-    glTranslatef(-5, 10, 0.0);     // change coo center to left top of the house
-    glRotatef(-30, 0.0, 0.0, 1.0); // rotate rectangle (-90 - 60) = -30 degrees
-    glTranslatef(-5, 0, 0);        // change axis of rectangle
+    glTranslatef(-2.5, 10 + sqrt(3.0) * 2.5,
+                 0); // change rect center to left top of the house
+    glRotated(180 - 30, 0, 0,
+              1); // rotate rectangle -(60 / 2) = -30 degrees
+                  // we want to flip the surface (+ 180) so the normal vectors
+                  // face towards the outside of the roof
+    glTranslated(-5, -5, 0); // move center of rectangle to (0,0,0)
     glCallList(listIndexRect);
     glPopMatrix();
 
@@ -357,7 +403,7 @@ void draw_house()
 
     // back triangle
     glPushMatrix();
-    glTranslatef(0, 0, -20);
+    glRotated(180, 0, 1, 0);
     glCallList(listIndexTriangle);
     glPopMatrix();
 
@@ -369,7 +415,8 @@ void draw_house()
 
     // back
     glPushMatrix();
-    glTranslatef(0.0, 0.0, -20.0); // square is on z = 10
+    glRotated(180, 0, 1, 0); // rotate instead of traslate, so normal
+                             // vectors are facing outward the house
     glCallList(listIndexSquare);
     glPopMatrix();
 
@@ -380,7 +427,7 @@ void draw_house()
 
     // left side (x = -5)
     glPushMatrix();
-    glTranslatef(-10.0, 0.0, 0.0);
+    glRotated(180, 0, 1, 0);
     glCallList(listIndexRect);
     glPopMatrix();
 
@@ -395,11 +442,29 @@ void draw_surface()
     GLfloat green[4] = {0.0, 0.5, 0.0, 1.0}; // green surface
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, green);
 
+    typedef GLfloat point3D[3];
+
+    point3D vertices[4] = {
+        {-50, 0, -50}, {-50, 0, 50}, {50, 0, 50}, {50, 0, -50}};
+
+    point3D diffs[4] = {0};
+    for (size_t i = 1; i <= 4; i++)
+    {
+        // find vector differences
+        diffs[i - 1][0] = vertices[i % 4][0] - vertices[i - 1][0];
+        diffs[i - 1][1] = vertices[i % 4][1] - vertices[i - 1][1];
+        diffs[i - 1][2] = vertices[i % 4][2] - vertices[i - 1][2];
+    }
+
     glBegin(GL_QUADS);
-    glVertex3f(-50, 0, -50);
-    glVertex3f(-50, 0, 50);
-    glVertex3f(50, 0, 50);
-    glVertex3f(50, 0, -50);
+    set_normal_v(diffs[0], reverse(diffs[3]));
+    glVertex3fv(vertices[0]);
+    set_normal_v(diffs[1], reverse(diffs[0]));
+    glVertex3fv(vertices[1]);
+    set_normal_v(diffs[2], reverse(diffs[1]));
+    glVertex3fv(vertices[2]);
+    set_normal_v(diffs[3], reverse(diffs[2]));
+    glVertex3fv(vertices[3]);
     glEnd();
 }
 
@@ -408,17 +473,39 @@ void draw_surface_tiles()
     GLfloat green[4] = {0.0, 0.5, 0.0, 1.0}; // green surface
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, green);
 
+    typedef GLfloat point3D[3];
+
     // Divide the surface into 100 tiles: Each row and column of the divided
     // surface should consist of 10 tiles (10 tiles x 10 tiles = 100). The
     // surface is 100 x 100 (y=0). Hence, each tile is 10 x 10.
     for (int i = 0; i < 100; i++)
     {
+        point3D bottom_left = {(float)(-50 + (i % 10) * 10), 0.0,
+                               (float)(-50 + (i / 10) * 10)};
+
+        point3D vertices[4] = {{bottom_left[0], 0, bottom_left[2]},
+                               {bottom_left[0], 0, bottom_left[2] + 10},
+                               {bottom_left[0] + 10, 0, bottom_left[2] + 10},
+                               {bottom_left[0] + 10, 0, bottom_left[2]}};
+
+        point3D diffs[4] = {0};
+        for (size_t i = 1; i <= 4; i++)
+        {
+            // find vector differences
+            diffs[i - 1][0] = vertices[i % 4][0] - vertices[i - 1][0];
+            diffs[i - 1][1] = vertices[i % 4][1] - vertices[i - 1][1];
+            diffs[i - 1][2] = vertices[i % 4][2] - vertices[i - 1][2];
+        }
+
         glBegin(GL_QUADS);
-        GLint bottom_left[3] = {-50 + (i % 10) * 10, 0, -50 + (i / 10) * 10};
-        glVertex3iv(bottom_left);
-        glVertex3i(bottom_left[0], 0, bottom_left[2] + 10);      // top left
-        glVertex3i(bottom_left[0] + 10, 0, bottom_left[2] + 10); // top right
-        glVertex3i(bottom_left[0] + 10, 0, bottom_left[2]);      // bottom right
+        set_normal_v(diffs[0], reverse(diffs[3]));
+        glVertex3fv(vertices[0]); // bottom left
+        set_normal_v(diffs[1], reverse(diffs[0]));
+        glVertex3fv(vertices[1]); // top left
+        set_normal_v(diffs[2], reverse(diffs[1]));
+        glVertex3fv(vertices[2]); // right top
+        set_normal_v(diffs[3], reverse(diffs[2]));
+        glVertex3fv(vertices[3]); // bottom right
         glEnd();
     }
 }
