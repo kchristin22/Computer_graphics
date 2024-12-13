@@ -12,8 +12,9 @@ GLuint listIndexTriangle;
 GLuint listIndexSphere;
 static GLfloat theta = 0.0;
 std::chrono::_V2::steady_clock::time_point lastTime;
-double deltaRotate2D = 0.0;
-double deltaY = 0.0;
+static double deltaRotate2D = 0.0;
+static double deltaY = 0.0;
+static bool useRealisticShading = false;
 
 #define DIV_SURF_ITER 4
 
@@ -360,6 +361,8 @@ void myinit()
 
 void draw_house()
 {
+    if (useRealisticShading)
+        glShadeModel(GL_SMOOTH);
     GLfloat zero[4] = {0.0, 0.0, 0.0, 1.0};
     glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, zero);
 
@@ -402,8 +405,13 @@ void draw_house()
     glCallList(listIndexTriangle);
     glPopMatrix();
 
+    if (useRealisticShading)
+        glShadeModel(GL_FLAT);
+
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,
                  zero); // no specular highlight
+    glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS,
+                0); // rooftop is metallic (reflective)
     GLfloat diffuse[4] = {1.0, 0.91, 0.714,
                           1.0}; // light shade of brown for the walls
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, diffuse);
@@ -434,6 +442,8 @@ void draw_house()
 
 void draw_surface()
 {
+    if (useRealisticShading)
+        glShadeModel(GL_SMOOTH);
     GLfloat green[4] = {0.0, 0.5, 0.0, 1.0}; // green surface
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, green);
 
@@ -622,14 +632,18 @@ void menu_grass(int choice)
 
 void menu_shader(int choice)
 {
-    if (choice == 0)
+    useRealisticShading = false;
+    switch (choice)
     {
+    case 0:
         glShadeModel(GL_SMOOTH);
-    }
-    else if (choice == 1)
-    {
+        break;
+    case 2:
+        useRealisticShading = true;
+    case 1:
         glShadeModel(GL_FLAT);
     }
+    glutPostRedisplay();
 }
 
 void rotate_camera(int key, int x, int y)
@@ -687,6 +701,7 @@ int main(int argc, char **argv)
     // Add menu items
     glutAddMenuEntry("Smooth shading", 0);
     glutAddMenuEntry("Flat shading", 1);
+    glutAddMenuEntry("Use appropriate shading technique for each surface", 2);
 
     // Associate a mouse button with menu
     glutAttachMenu(GLUT_LEFT_BUTTON);
