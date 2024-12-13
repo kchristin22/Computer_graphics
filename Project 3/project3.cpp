@@ -12,6 +12,8 @@ GLuint listIndexTriangle;
 GLuint listIndexSphere;
 static GLfloat theta = 0.0;
 std::chrono::_V2::steady_clock::time_point lastTime;
+double deltaRotate2D = 0.0;
+double deltaY = 0.0;
 
 #define DIV_SURF_ITER 4
 
@@ -296,20 +298,15 @@ void myinit()
     glEnable(GL_LIGHT0);
 
     glEnable(GL_DEPTH_TEST);
-    glClearColor(1.0, 1.0, 1.0, 0.0); // white background
+    glClearColor(0.733, 0.859, 1.0, 0.0); // light blue background
 
     // set up viewing
     // 500 x 500 window with origin lower left
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity(); // reset the matrix
-    glOrtho(-50.0, 50.0, -50.0, 50.0, -50.0,
-            50.0); // near = 50.0, far = -50.0, no perspective
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    gluLookAt(0, 0, 51, // camera pos, no objects are to be behind the camera
-              0, 0, 50, // camera target, z insignificant
-              0.0, 1.0, 0.0);
+    glFrustum(-15.0, 15.0, -15.0, 15.0, 51.0,
+              200.0); // Perspective projection
 
     glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE); // use viewer location
 
@@ -538,15 +535,16 @@ void display()
 {
     glDrawBuffer(GL_BACK);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the window
-    glLoadIdentity();
-    glRotatef(90, 0.0, 1.0, 0.0);
-    // glScalef(50, 50, 50);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity(); // reset the matrix
+    gluLookAt(70 * cos(deltaRotate2D), 40.0 + deltaY,
+              70 * sin(deltaRotate2D), // starting camera pos
+              0, 0, 0,                 // camera target
+              0.0, 1.0, 0.0);
 
     draw_house();
     draw_surface();
     draw_sun();
-
-    // glEnable(GL_NORMALIZE);
 
     glutSwapBuffers();
     glFlush(); // clear buffers
@@ -556,15 +554,16 @@ void display2()
 {
     glDrawBuffer(GL_BACK);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the window
-    glLoadIdentity();
-    glRotatef(90, 1.0, 0.0, 0.0);
-    // glScalef(40, 40, 40);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity(); // reset the matrix
+    gluLookAt(70 * cos(deltaRotate2D), 40.0 + deltaY,
+              70 * sin(deltaRotate2D), // starting camera pos
+              0, 0, 0,                 // camera target
+              0.0, 1.0, 0.0);
 
     draw_house();
     draw_surface_tiles();
     draw_sun();
-
-    // glEnable(GL_NORMALIZE);
 
     glutSwapBuffers();
     glFlush(); // clear buffers
@@ -633,6 +632,34 @@ void menu_shader(int choice)
     }
 }
 
+void rotate_camera(int key, int x, int y)
+{
+    switch (key)
+    {
+    case GLUT_KEY_LEFT:
+        deltaRotate2D += 1;
+        if (deltaRotate2D >= 360)
+            deltaRotate2D -= 360;
+        break;
+    case GLUT_KEY_RIGHT:
+        deltaRotate2D -= 1;
+        if (deltaRotate2D < 0)
+            deltaRotate2D += 360;
+        break;
+    case GLUT_KEY_UP:
+        if (deltaY <
+            120) // deltaY < (max height) - (y starting point) - (height of the
+                 // house (more or less)) = 200 - 40 - 30 = 130
+            deltaY += 10;
+        break;
+    case GLUT_KEY_DOWN:
+        deltaY -= 10;
+        break;
+    }
+
+    glutPostRedisplay();
+}
+
 int main(int argc, char **argv)
 {
     // Standard GLUT initialization
@@ -663,6 +690,8 @@ int main(int argc, char **argv)
 
     // Associate a mouse button with menu
     glutAttachMenu(GLUT_LEFT_BUTTON);
+
+    glutSpecialFunc(rotate_camera);
 
     myinit(); // set attributes
 
