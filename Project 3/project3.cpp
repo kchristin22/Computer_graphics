@@ -297,6 +297,7 @@ void myinit()
     // attributes
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
+    glEnable(GL_LIGHT1);
 
     glEnable(GL_DEPTH_TEST);
     glClearColor(0.733, 0.859, 1.0, 0.0); // light blue background
@@ -308,6 +309,9 @@ void myinit()
     glLoadIdentity(); // reset the matrix
     glFrustum(-15.0, 15.0, -15.0, 15.0, 51.0,
               200.0); // Perspective projection
+
+    GLfloat global_ambient[4] = {0.3, 0.3, 0.3, 1.0};
+    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
 
     glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE); // use viewer location
 
@@ -547,10 +551,25 @@ void display()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the window
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity(); // reset the matrix
-    gluLookAt(70 * cos(deltaRotate2D), 40.0 + deltaY,
-              70 * sin(deltaRotate2D), // starting camera pos
-              0, 0, 0,                 // camera target
+    GLfloat camera_pos[3] = {(float)(70 * cos(deltaRotate2D)),
+                             (float)(40.0 + deltaY),
+                             (float)(70 * sin(deltaRotate2D))};
+    gluLookAt(camera_pos[0], camera_pos[1],
+              camera_pos[2], // starting camera pos
+              0, 0, 0,       // camera target
               0.0, 1.0, 0.0);
+
+    GLfloat black[4] = {0.0, 0.0, 0.0, 1.0};
+    GLfloat white[4] = {1.0, 1.0, 1.0, 1.0};
+    glLightfv(GL_LIGHT1, GL_DIFFUSE, white);
+    glLightfv(GL_LIGHT1, GL_SPECULAR, white);
+    glLightfv(GL_LIGHT1, GL_AMBIENT, black);
+
+    glLightfv(GL_LIGHT1, GL_POSITION, camera_pos);
+
+    glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, reverse(camera_pos));
+    glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 30.0);
+    glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, 2.5);
 
     draw_house();
     draw_surface();
@@ -566,10 +585,25 @@ void display2()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the window
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity(); // reset the matrix
-    gluLookAt(70 * cos(deltaRotate2D), 40.0 + deltaY,
-              70 * sin(deltaRotate2D), // starting camera pos
-              0, 0, 0,                 // camera target
+    GLfloat camera_pos[3] = {(float)(70 * cos(deltaRotate2D)),
+                             (float)(40.0 + deltaY),
+                             (float)(70 * sin(deltaRotate2D))};
+    gluLookAt(camera_pos[0], camera_pos[1],
+              camera_pos[2], // starting camera pos
+              0, 0, 0,       // camera target
               0.0, 1.0, 0.0);
+
+    GLfloat black[4] = {0.0, 0.0, 0.0, 1.0};
+    GLfloat white[4] = {1.0, 1.0, 1.0, 1.0};
+    glLightfv(GL_LIGHT1, GL_DIFFUSE, white);
+    glLightfv(GL_LIGHT1, GL_SPECULAR, white);
+    glLightfv(GL_LIGHT1, GL_AMBIENT, black);
+
+    glLightfv(GL_LIGHT1, GL_POSITION, camera_pos);
+
+    glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, reverse(camera_pos));
+    glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 30.0);
+    glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, 2.5);
 
     draw_house();
     draw_surface_tiles();
