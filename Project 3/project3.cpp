@@ -455,12 +455,16 @@ void draw_sun()
     // zero[3] = 0.0; // distant light source
     GLfloat dir[4] = {1.0, 0.0, 0.0, 0.0};
     glLightfv(GL_LIGHT0, GL_POSITION, zero);
-    glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION,
-              dir); // Cutoff angle is 180 by default and damping exponent is 0.
-                    // This effect is simulated by the intensity of the light.
-                    // Also, the light source is distant, so the distance from
-                    // it doesn't affect the intensity of the light ( no need to
-                    // set attenuation coeffecients).
+    glLightfv(
+        GL_LIGHT0, GL_SPOT_DIRECTION,
+        dir); // Cutoff angle is 180 by default and damping exponent is 0.
+              // This effect is simulated by the intensity of the light.
+              // Also, the sun is, in reality, a distant source, though we
+              // don't denote it as such in Opengl in order to increase the
+              // effect it has on the shading of the surfaces. Hence, we ignore
+              // the light attenuation due to the distance from the light source
+              // (no need to set attenuation coeffecients, the default ones of
+              // the distance terms are 0).
     glLightfv(GL_LIGHT0, GL_AMBIENT, zero);
 }
 
@@ -483,6 +487,10 @@ void display()
     glLightfv(GL_LIGHT1, GL_DIFFUSE, white);
     glLightfv(GL_LIGHT1, GL_SPECULAR, white);
     glLightfv(GL_LIGHT1, GL_AMBIENT, black);
+
+    glLightf(GL_LIGHT1, GL_CONSTANT_ATTENUATION, 1.5);
+    glLightf(GL_LIGHT1, GL_LINEAR_ATTENUATION, 0.5);
+    glLightf(GL_LIGHT1, GL_QUADRATIC_ATTENUATION, 0.2);
 
     glLightfv(GL_LIGHT1, GL_POSITION, camera_pos);
 
