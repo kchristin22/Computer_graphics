@@ -6,9 +6,8 @@
 #include <stdio.h>
 #include <unistd.h>
 
-GLuint listIndexRect;
-GLuint listIndexSquare;
-GLuint listIndexTriangle;
+GLuint listIndexHouseSurf;
+GLuint listIndexHouseSurfTiles;
 GLuint listIndexSphere;
 static GLfloat theta = 0.0;
 std::chrono::_V2::steady_clock::time_point lastTime;
@@ -290,78 +289,6 @@ void draw_sphere()
 */
 // -------------------------------------------------------------------------------
 
-void myinit()
-{
-
-    // attributes
-    glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
-    glEnable(GL_LIGHT1);
-
-    glEnable(GL_DEPTH_TEST);
-    glClearColor(0.733, 0.859, 1.0, 0.0); // light blue background
-
-    // set up viewing
-    // 500 x 500 window with origin lower left
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity(); // reset the matrix
-    glFrustum(-15.0, 15.0, -15.0, 15.0, 51.0,
-              200.0); // Perspective projection
-
-    GLfloat global_ambient[4] = {0.2, 0.2, 0.2, 1.0};
-    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
-
-    glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE); // use viewer location
-
-    listIndexRect = glGenLists(1);
-    if (!listIndexRect)
-    {
-        std::cerr << "Rect list wasn't created" << std::endl;
-        return;
-    }
-
-    glNewList(listIndexRect, GL_COMPILE);
-    draw_rectangle();
-    glEndList();
-
-    listIndexSquare = glGenLists(1);
-
-    if (!listIndexSquare)
-    {
-        std::cerr << "Square list wasn't created" << std::endl;
-        return;
-    }
-
-    glNewList(listIndexSquare, GL_COMPILE);
-    draw_square();
-    glEndList();
-
-    listIndexTriangle = glGenLists(1);
-
-    if (!listIndexSquare)
-    {
-        std::cerr << "Triangle list wasn't created" << std::endl;
-        return;
-    }
-
-    glNewList(listIndexTriangle, GL_COMPILE);
-    draw_triangle();
-    glEndList();
-
-    listIndexSphere = glGenLists(1);
-
-    if (!listIndexSphere)
-    {
-        std::cerr << "Sphere list wasn't created" << std::endl;
-        return;
-    }
-
-    glNewList(listIndexSphere, GL_COMPILE);
-    draw_sphere();
-    glEndList();
-}
-
 void draw_house()
 {
     GLfloat zero[4] = {0.0, 0.0, 0.0, 1.0};
@@ -380,7 +307,7 @@ void draw_house()
                  0);         // change rect center to right top of the house
     glRotated(30, 0, 0, 1);  // rotate rectangle 60 / 2 = 30 degrees
     glTranslated(-5, -5, 0); // move center of rectangle to (0,0,0)
-    glCallList(listIndexRect);
+    draw_rectangle();
     glPopMatrix();
 
     // left top
@@ -392,18 +319,18 @@ void draw_house()
                   // we want to flip the surface (+ 180) so the normal vectors
                   // face towards the outside of the roof
     glTranslated(-5, -5, 0); // move center of rectangle to (0,0,0)
-    glCallList(listIndexRect);
+    draw_rectangle();
     glPopMatrix();
 
     // front triangle
     glPushMatrix();
-    glCallList(listIndexTriangle);
+    draw_triangle();
     glPopMatrix();
 
     // back triangle
     glPushMatrix();
     glRotated(180, 0, 1, 0);
-    glCallList(listIndexTriangle);
+    draw_triangle();
     glPopMatrix();
 
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,
@@ -418,23 +345,23 @@ void draw_house()
     glPushMatrix();
     glRotated(180, 0, 1, 0); // rotate instead of traslate, so normal
                              // vectors are facing outward the house
-    glCallList(listIndexSquare);
+    draw_square();
     glPopMatrix();
 
     // front
     glPushMatrix();
-    glCallList(listIndexSquare);
+    draw_square();
     glPopMatrix();
 
     // left side (x = -5)
     glPushMatrix();
     glRotated(180, 0, 1, 0);
-    glCallList(listIndexRect);
+    draw_rectangle();
     glPopMatrix();
 
     // right side (x = 5)
     glPushMatrix();
-    glCallList(listIndexRect);
+    draw_rectangle();
     glPopMatrix();
 }
 
@@ -695,6 +622,67 @@ void rotate_camera(int key, int x, int y)
     }
 
     glutPostRedisplay();
+}
+
+void myinit()
+{
+
+    // attributes
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+    glEnable(GL_LIGHT1);
+
+    glEnable(GL_DEPTH_TEST);
+    glClearColor(0.733, 0.859, 1.0, 0.0); // light blue background
+
+    // set up viewing
+    // 500 x 500 window with origin lower left
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity(); // reset the matrix
+    glFrustum(-15.0, 15.0, -15.0, 15.0, 51.0,
+              200.0); // Perspective projection
+
+    GLfloat global_ambient[4] = {0.2, 0.2, 0.2, 1.0};
+    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
+
+    glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE); // use viewer location
+
+    listIndexHouseSurf = glGenLists(1);
+    if (!listIndexHouseSurf)
+    {
+        std::cerr << "HouseSurf list wasn't created" << std::endl;
+        return;
+    }
+
+    glNewList(listIndexHouseSurf, GL_COMPILE);
+    draw_house();
+    draw_surface();
+    glEndList();
+
+    listIndexHouseSurfTiles = glGenLists(1);
+    if (!listIndexHouseSurfTiles)
+    {
+        std::cerr << "HouseSurfTiles list wasn't created" << std::endl;
+        return;
+    }
+
+    glNewList(listIndexHouseSurfTiles, GL_COMPILE);
+    draw_house();
+    draw_surface_tiles();
+    glEndList();
+
+    listIndexSphere = glGenLists(1);
+
+    if (!listIndexSphere)
+    {
+        std::cerr << "Sphere list wasn't created" << std::endl;
+        return;
+    }
+
+    glNewList(listIndexSphere, GL_COMPILE);
+    draw_sphere();
+    glEndList();
 }
 
 int main(int argc, char **argv)
