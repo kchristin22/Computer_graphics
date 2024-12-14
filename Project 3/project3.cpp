@@ -156,6 +156,9 @@ void draw_sphere()
                        {0.0, 0.942809, -0.33333},
                        {-0.816497, -0.471405, -0.333333},
                        {0.816497, -0.471405, -0.333333}};
+
+    // Repeat 4 times, which means draw 2^4 = 16 lines from each side (16 x
+    // 16 blocks)
     int step = pow(2, DIV_SURF_ITER); // Number of steps per edge
 
     // Face 0: 0, 1, 2
@@ -166,9 +169,6 @@ void draw_sphere()
     {
         GLint index[3] = {face, (face + 1) % 4, (face + 2) % 4};
 
-        // Repeat 4 times, which means draw 2^4 = 16 lines from each side (16 x
-        // 16 blocks)
-
         GLfloat p0[3] = {0};
         GLfloat p1[3] = {0};
         GLfloat p2[3] = {0};
@@ -177,12 +177,13 @@ void draw_sphere()
         // Since we know the number of tiles from the beginning we can draw them
         // as we move along two sides of a face:
         //              v1
-        //              /_\
-        //             /   \
-        //   left_dir /     \
-        //         ^ /\      \
-        //        / /\/\      \
-        //       / /\ \/\      \
+        //               /\
+        //              /  \
+        //             /    \
+        //   left_dir /      \
+        //         ^ /        \
+        //        / /          \
+        //       / /\/ \/\      \
         //      v0 ------------- v2
         //       -----> right_dir
         // By moving along these lines (directions) (p0 and p1 are subsequent on
@@ -323,9 +324,7 @@ void draw_house()
     glPopMatrix();
 
     // front triangle
-    glPushMatrix();
     draw_triangle();
-    glPopMatrix();
 
     // back triangle
     glPushMatrix();
@@ -336,7 +335,7 @@ void draw_house()
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,
                  zero); // no specular highlight
     glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS,
-                0); // rooftop is metallic (reflective)
+                0); // walls are matte (non-reflective)
     GLfloat diffuse[4] = {0.839, 0.749, 0.553,
                           1.0}; // light shade of brown for the walls
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, diffuse);
@@ -349,9 +348,7 @@ void draw_house()
     glPopMatrix();
 
     // front
-    glPushMatrix();
     draw_square();
-    glPopMatrix();
 
     // left side (x = -5)
     glPushMatrix();
@@ -360,9 +357,7 @@ void draw_house()
     glPopMatrix();
 
     // right side (x = 5)
-    glPushMatrix();
     draw_rectangle();
-    glPopMatrix();
 }
 
 void draw_surface()
@@ -525,6 +520,10 @@ void display2()
     glLightfv(GL_LIGHT1, GL_SPECULAR, white);
     glLightfv(GL_LIGHT1, GL_AMBIENT, black);
 
+    glLightf(GL_LIGHT1, GL_CONSTANT_ATTENUATION, 1.5);
+    glLightf(GL_LIGHT1, GL_LINEAR_ATTENUATION, 0.5);
+    glLightf(GL_LIGHT1, GL_QUADRATIC_ATTENUATION, 0.2);
+
     glLightfv(GL_LIGHT1, GL_POSITION, camera_pos);
 
     glLightfv(GL_LIGHT1, GL_SPOT_DIRECTION, reverse(camera_pos));
@@ -599,7 +598,8 @@ void menu_shader(int choice)
     {
         glShadeModel(GL_FLAT);
     }
-    glutPostRedisplay();
+    glutPostRedisplay(); // not necessary here, as the idle function will
+                         // automatically call the display function
 }
 
 void rotate_camera(int key, int x, int y)
@@ -617,9 +617,11 @@ void rotate_camera(int key, int x, int y)
             deltaRotate2D += 360;
         break;
     case GLUT_KEY_UP:
-        if (deltaY <
-            120) // deltaY < (max height) - (y starting point) - (height of the
-                 // house (more or less)) = 200 - 40 - 30 = 130
+        if (deltaY < 120) // deltaY < (max height) - (y starting point) -
+                          // (height of the house (more or less)) = 200 - 40 -
+                          // 20 = 140 and because the view is tilted, we add a
+                          // margin of 10 to not deprecate the corners of the
+                          // surface. Consequently, deltaY < 120.
             deltaY += 10;
         break;
     case GLUT_KEY_DOWN:
@@ -642,8 +644,6 @@ void myinit()
     glClearColor(0.733, 0.859, 1.0, 0.0); // light blue background
 
     // set up viewing
-    // 500 x 500 window with origin lower left
-
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity(); // reset the matrix
     glFrustum(-15.0, 15.0, -15.0, 15.0, 51.0,
