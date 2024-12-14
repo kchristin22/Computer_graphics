@@ -295,12 +295,16 @@ void draw_house()
     GLfloat zero[4] = {0.0, 0.0, 0.0, 1.0};
     glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, zero);
 
-    GLfloat red[4] = {0.698, 0.13, 0.13, 1.0}; // dark shade of red for the roof
+    GLfloat red[4] = {
+        0.89, 0.475, 0.475,
+        1.0}; // light shade of red for the specular highlight of the roof
+    GLfloat red_dark[4] = {0.769, 0.0, 0.0, 1.0}; // dark shade of red for the
+                                                  // roof
 
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, red);
     glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS,
                 100); // rooftop is metallic (reflective)
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, red);
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, red_dark);
 
     // right top
     glPushMatrix();
@@ -484,7 +488,7 @@ void display()
     glLightfv(GL_LIGHT1, GL_AMBIENT, black);
 
     glLightf(GL_LIGHT1, GL_CONSTANT_ATTENUATION, 1.5);
-    glLightf(GL_LIGHT1, GL_LINEAR_ATTENUATION, 0.5);
+    glLightf(GL_LIGHT1, GL_LINEAR_ATTENUATION, 0.75);
     glLightf(GL_LIGHT1, GL_QUADRATIC_ATTENUATION, 0.2);
 
     glLightfv(GL_LIGHT1, GL_POSITION, camera_pos);
