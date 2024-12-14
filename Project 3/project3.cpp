@@ -602,6 +602,20 @@ void menu_shader(int choice)
                          // automatically call the display function
 }
 
+void menu_light(int choice)
+{
+    if (choice == 0)
+    {
+        glDisable(GL_LIGHT1);
+    }
+    else if (choice == 1)
+    {
+        glEnable(GL_LIGHT1);
+    }
+    glutPostRedisplay(); // not necessary here, as the idle function will
+                         // automatically call the display function
+}
+
 void rotate_camera(int key, int x, int y)
 {
     switch (key)
@@ -723,6 +737,14 @@ int main(int argc, char **argv)
     glutAttachMenu(GLUT_LEFT_BUTTON);
 
     glutSpecialFunc(rotate_camera);
+
+    glutCreateMenu(menu_light);
+    // Add menu items
+    glutAddMenuEntry("Camera's spotlight OFF", 0);
+    glutAddMenuEntry("Camera's spotlight ON", 1);
+
+    // Associate a mouse button with menu
+    glutAttachMenu(GLUT_MIDDLE_BUTTON);
 
     myinit(); // set attributes
 
