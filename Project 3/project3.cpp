@@ -490,8 +490,7 @@ void display()
     glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 30.0);
     glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, 2.5);
 
-    draw_house();
-    draw_surface();
+    glCallList(listIndexHouseSurf);
     draw_sun();
 
     glutSwapBuffers();
@@ -524,8 +523,7 @@ void display2()
     glLightf(GL_LIGHT1, GL_SPOT_CUTOFF, 30.0);
     glLightf(GL_LIGHT1, GL_SPOT_EXPONENT, 2.5);
 
-    draw_house();
-    draw_surface_tiles();
+    glCallList(listIndexHouseSurfTiles);
     draw_sun();
 
     glutSwapBuffers();
