@@ -14,7 +14,6 @@ static GLfloat theta = 0.0;
 std::chrono::_V2::steady_clock::time_point lastTime;
 static double deltaRotate2D = 0.0;
 static double deltaY = 0.0;
-static bool useRealisticShading = false;
 
 #define DIV_SURF_ITER 4
 
@@ -49,7 +48,7 @@ void normalize(GLfloat p[3])
 void set_normal_v(GLfloat a[3], GLfloat b[3])
 {
     // (a1​,a2​,a3​)×(b1​,b2​,b3​)=(a2​b3​−a3​b2​,a3​b1​−a1​b3​,a1​b2​−a2​b1​)
-    GLfloat normalv[3] = {a[1] * b[2] - a[2] * b[0], a[2] * b[0] - a[0] * b[2],
+    GLfloat normalv[3] = {a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2],
                           a[0] * b[1] - a[1] * b[0]};
     normalize(normalv);
     glNormal3fv(normalv);
@@ -310,7 +309,7 @@ void myinit()
     glFrustum(-15.0, 15.0, -15.0, 15.0, 51.0,
               200.0); // Perspective projection
 
-    GLfloat global_ambient[4] = {0.3, 0.3, 0.3, 1.0};
+    GLfloat global_ambient[4] = {0.2, 0.2, 0.2, 1.0};
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, global_ambient);
 
     glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, GL_TRUE); // use viewer location
@@ -365,8 +364,6 @@ void myinit()
 
 void draw_house()
 {
-    if (useRealisticShading)
-        glShadeModel(GL_SMOOTH);
     GLfloat zero[4] = {0.0, 0.0, 0.0, 1.0};
     glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, zero);
 
@@ -409,14 +406,11 @@ void draw_house()
     glCallList(listIndexTriangle);
     glPopMatrix();
 
-    if (useRealisticShading)
-        glShadeModel(GL_FLAT);
-
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR,
                  zero); // no specular highlight
     glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS,
                 0); // rooftop is metallic (reflective)
-    GLfloat diffuse[4] = {1.0, 0.91, 0.714,
+    GLfloat diffuse[4] = {0.839, 0.749, 0.553,
                           1.0}; // light shade of brown for the walls
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, diffuse);
 
@@ -446,8 +440,6 @@ void draw_house()
 
 void draw_surface()
 {
-    if (useRealisticShading)
-        glShadeModel(GL_SMOOTH);
     GLfloat green[4] = {0.0, 0.5, 0.0, 1.0}; // green surface
     glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, green);
 
@@ -533,7 +525,7 @@ void draw_sun()
 
     glCallList(listIndexSphere);
 
-    zero[4] = 0.0; // distant light source
+    // zero[3] = 0.0; // distant light source
     GLfloat dir[4] = {1.0, 0.0, 0.0, 0.0};
     glLightfv(GL_LIGHT0, GL_POSITION, zero);
     glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION,
@@ -666,15 +658,12 @@ void menu_grass(int choice)
 
 void menu_shader(int choice)
 {
-    useRealisticShading = false;
-    switch (choice)
+    if (choice == 0)
     {
-    case 0:
         glShadeModel(GL_SMOOTH);
-        break;
-    case 2:
-        useRealisticShading = true;
-    case 1:
+    }
+    else if (choice == 1)
+    {
         glShadeModel(GL_FLAT);
     }
     glutPostRedisplay();
@@ -735,7 +724,6 @@ int main(int argc, char **argv)
     // Add menu items
     glutAddMenuEntry("Smooth shading", 0);
     glutAddMenuEntry("Flat shading", 1);
-    glutAddMenuEntry("Use appropriate shading technique for each surface", 2);
 
     // Associate a mouse button with menu
     glutAttachMenu(GLUT_LEFT_BUTTON);
